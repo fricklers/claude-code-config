@@ -47,3 +47,10 @@
 - When something seems wrong, say so directly with reasoning and suggest an alternative
 - Don't summarize what you did unless asked
 - When reporting errors, include the actual error message and file:line location
+
+## Inclusive Language
+- Avoid "enable/disable" — use "activate/deactivate", "turn on/turn off", or "allow/block"
+- Avoid "whitelist/blacklist" — use "allowlist/blocklist"
+- Avoid "master/slave" — use "primary/replica"
+- Avoid "sanity check" — use "confidence check"
+- Avoid "dummy" — use "placeholder"
