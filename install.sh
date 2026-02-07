@@ -336,8 +336,8 @@ check_skills() {
     fi
 
     local repo_hash installed_hash
-    repo_hash=$(find "$skill_dir" -type f | sort | xargs shasum 2>/dev/null | shasum | awk '{print $1}')
-    installed_hash=$(find "$installed_dir" -type f | sort | xargs shasum 2>/dev/null | shasum | awk '{print $1}')
+    repo_hash=$(cd "$skill_dir" && find . -type f | sort | xargs shasum 2>/dev/null | shasum | awk '{print $1}')
+    installed_hash=$(cd "$installed_dir" && find . -type f | sort | xargs shasum 2>/dev/null | shasum | awk '{print $1}')
 
     if [ "$repo_hash" = "$installed_hash" ]; then
       echo -e "  ${GREEN}[OK]${NC}      $name"
