@@ -24,6 +24,8 @@ This configuration was built by analyzing and learning from the best Claude Code
 
 - **[Matt-Dionis/claude-code-configs](https://github.com/Matt-Dionis/claude-code-configs)** (613 stars) — CLI merger tool concept, zero-dependency philosophy, test-driven approach with 124 tests.
 
+- **[supabase/agent-skills](https://github.com/supabase/agent-skills)** (MIT) — Official Supabase Postgres best practices skill, vendored as `skills/supabase-postgres-best-practices/`. 30+ reference files covering query optimization, indexing, RLS, connection management, and schema design.
+
 - **[Official Claude Code Documentation](https://docs.anthropic.com/en/docs/claude-code)** — All hook, settings, agent, skill, and command specifications.
 
 ## Design Decisions Informed by Analysis
@@ -37,3 +39,4 @@ This configuration was built by analyzing and learning from the best Claude Code
 | Hooks enforce better than instructions | Boris Cherny, ChrisWiles | 6 hooks covering safety, linting, and context |
 | Zero external deps = zero broken installs | Matt-Dionis | bash + jq only, no npm/pip/cargo |
 | Settings.json is the most important file nobody ships | (our analysis) | Complete settings.json with all hooks pre-wired |
+| Vendor proven community skills rather than reinventing | supabase/agent-skills | Vendored Postgres best practices with full attribution |

@@ -193,9 +193,9 @@ interactive_menu() {
     "claude-md:CLAUDE.md — coding instructions"
     "hooks:hooks/ — 6 hook scripts (safety, linting, git context)"
     "agents:agents/ — explorer (haiku) + reviewer (sonnet)"
-    "skills:skills/ — rigorous-coding discipline"
-    "commands:commands/ — /handoff + /review"
-    "rules:rules/ — comment policy + testing conventions"
+    "skills:skills/ — rigorous-coding, debug, ship-it, scaffold, supabase-postgres"
+    "commands:commands/ — /handoff, /review, /debug"
+    "rules:rules/ — comment policy + testing conventions + language examples"
   )
 
   echo "Select what to install:"
@@ -271,7 +271,26 @@ install_agents() {
 
 install_skills() {
   info "Installing skills..."
-  copy_file "$SCRIPT_DIR/skills/rigorous-coding/SKILL.md" "$CLAUDE_DIR/skills/rigorous-coding/SKILL.md"
+  for skill_dir in "$SCRIPT_DIR"/skills/*/; do
+    local name
+    name=$(basename "$skill_dir")
+    if [ -f "$skill_dir/SKILL.md" ]; then
+      copy_file "$skill_dir/SKILL.md" "$CLAUDE_DIR/skills/$name/SKILL.md"
+      # Copy additional skill files (AGENTS.md, README.md, etc.)
+      for extra in "$skill_dir"*.md; do
+        [ "$(basename "$extra")" = "SKILL.md" ] && continue
+        [ -f "$extra" ] || continue
+        copy_file "$extra" "$CLAUDE_DIR/skills/$name/$(basename "$extra")"
+      done
+      # Copy references directory if present
+      if [ -d "$skill_dir/references" ]; then
+        for ref in "$skill_dir"/references/*.md; do
+          [ -f "$ref" ] || continue
+          copy_file "$ref" "$CLAUDE_DIR/skills/$name/references/$(basename "$ref")"
+        done
+      fi
+    fi
+  done
 }
 
 install_commands() {
@@ -291,10 +310,12 @@ install_rules() {
     copy_file "$rule" "$CLAUDE_DIR/rules/$name"
   done
   echo ""
-  info "Language-specific rules (rules/examples/) are NOT auto-installed."
-  info "Copy them to your project's .claude/rules/ if needed:"
-  info "  cp $SCRIPT_DIR/rules/examples/typescript.md .claude/rules/"
-  info "  cp $SCRIPT_DIR/rules/examples/python.md .claude/rules/"
+  info "Language/stack rules (rules/examples/) are NOT auto-installed."
+  info "Copy them to your project's .claude/rules/ as needed:"
+  for example in "$SCRIPT_DIR"/rules/examples/*.md; do
+    [ -f "$example" ] || continue
+    info "  cp $SCRIPT_DIR/rules/examples/$(basename "$example") .claude/rules/"
+  done
 }
 
 # Post-install validation
