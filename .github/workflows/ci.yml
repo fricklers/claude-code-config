@@ -15,7 +15,7 @@ jobs:
       - name: Install ShellCheck
         run: sudo apt-get install -y shellcheck
       - name: Run ShellCheck
-        run: shellcheck install.sh hooks/*.sh
+        run: shellcheck install.sh hooks/*.sh scripts/*.sh
 
   json-validate:
     name: Validate JSON
@@ -26,3 +26,5 @@ jobs:
         run: pip install check-jsonschema
       - name: Validate settings.json
         run: check-jsonschema --schemafile "https://json.schemastore.org/claude-code-settings.json" settings.json
+      - name: Validate vendored.json
+        run: jq empty vendored.json

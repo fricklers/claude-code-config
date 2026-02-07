@@ -1,0 +1,13 @@
+{
+  "skills": [
+    {
+      "name": "supabase-postgres-best-practices",
+      "repo": "https://github.com/supabase/agent-skills.git",
+      "branch": "main",
+      "path": "skills/supabase-postgres-best-practices",
+      "commit": "22e466937a34fe4f2c7d2d199599c7a76cbcf51f",
+      "version": "1.1.0",
+      "license": "MIT"
+    }
+  ]
+}
