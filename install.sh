@@ -16,6 +16,7 @@ INSTALL_SKILLS=false
 INSTALL_COMMANDS=false
 INSTALL_RULES=false
 INSTALL_CLAUDE_MD=false
+INSTALL_CHECK=false
 
 # Colors (disabled if not a terminal)
 if [ -t 1 ]; then
@@ -48,6 +49,7 @@ Options:
   --commands      Install commands only
   --rules         Install rules only
   --claude-md     Install CLAUDE.md only
+  --check         Check installed skills for staleness (no changes)
   --no-backup     Skip backup of existing files
   --dry-run       Show what would be done without doing it
   -y, --yes       Skip confirmation prompts
@@ -70,6 +72,7 @@ while [[ $# -gt 0 ]]; do
     --commands)   INSTALL_COMMANDS=true; INTERACTIVE=false ;;
     --rules)      INSTALL_RULES=true; INTERACTIVE=false ;;
     --claude-md)  INSTALL_CLAUDE_MD=true; INTERACTIVE=false ;;
+    --check)      INSTALL_CHECK=true; INTERACTIVE=false ;;
     --no-backup)  BACKUP=false ;;
     --dry-run)    DRY_RUN=true ;;
     -y|--yes)     YES=true ;;
@@ -318,6 +321,32 @@ install_rules() {
   done
 }
 
+# Check installed skills for staleness
+check_skills() {
+  info "Skills status ($CLAUDE_DIR/skills/):"
+  for skill_dir in "$SCRIPT_DIR"/skills/*/; do
+    [ -d "$skill_dir" ] || continue
+    local name
+    name=$(basename "$skill_dir")
+    local installed_dir="$CLAUDE_DIR/skills/$name"
+
+    if [ ! -d "$installed_dir" ]; then
+      echo -e "  ${YELLOW}[MISSING]${NC} $name — not installed"
+      continue
+    fi
+
+    local repo_hash installed_hash
+    repo_hash=$(find "$skill_dir" -type f | sort | xargs shasum 2>/dev/null | shasum | awk '{print $1}')
+    installed_hash=$(find "$installed_dir" -type f | sort | xargs shasum 2>/dev/null | shasum | awk '{print $1}')
+
+    if [ "$repo_hash" = "$installed_hash" ]; then
+      echo -e "  ${GREEN}[OK]${NC}      $name"
+    else
+      echo -e "  ${YELLOW}[STALE]${NC}   $name — installed differs from repo"
+    fi
+  done
+}
+
 # Post-install validation
 validate() {
   local errors=0
@@ -349,6 +378,11 @@ validate() {
 # Main
 main() {
   preflight
+
+  if $INSTALL_CHECK; then
+    check_skills
+    exit 0
+  fi
 
   if $INTERACTIVE; then
     interactive_menu
