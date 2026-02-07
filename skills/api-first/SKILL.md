@@ -8,18 +8,18 @@ When this skill is active, follow this 7-step discipline when designing an API:
 ## 1. Start from the Consumer
 
 Design the API from the caller's perspective before writing any server code:
-- List every screen, workflow, or integration that will call this API
-- For each consumer, write the ideal request and response — what would make integration trivial?
-- Identify shared resources across consumers — these become your API entities
-- Document the sequence of calls needed for each workflow
+- **List every consumer**: screens, workflows, integrations, and third-party clients that will call this API
+- **Write the ideal request and response** for each consumer — what would make integration trivial?
+- **Identify shared resources** across consumers — these become your API entities
+- **Document call sequences** for each workflow — which endpoints, in what order?
 
 ## 2. Model Resources
 
 Map domain concepts to REST resources:
-- Nouns for resources (`/users`, `/orders`), verbs for actions that don't fit CRUD (`/orders/{id}/cancel`)
-- Use plural nouns consistently: `/users/{id}`, not `/user/{id}`
-- Nest only for strong parent-child relationships: `/users/{id}/addresses` — flatten everything else
-- Keep URLs shallow — max 2 levels of nesting
+- **Nouns for resources** (`/users`, `/orders`), **verbs for actions** that don't fit CRUD (`/orders/{id}/cancel`)
+- **Plural nouns consistently**: `/users/{id}`, not `/user/{id}`
+- **Nest only for strong parent-child** relationships: `/users/{id}/addresses` — flatten everything else
+- **Keep URLs shallow** — max 2 levels of nesting
 
 ## 3. Define Request and Response Shapes
 
@@ -49,10 +49,10 @@ Every error follows the same structure:
 ## 5. Design Authentication and Authorization
 
 Plan the security model before implementing endpoints:
-- Authentication: who is calling? (API key, JWT, OAuth2)
-- Authorization: what can they do? (RBAC, ABAC, resource ownership)
-- Apply least privilege — default deny, explicitly grant access per endpoint
-- Document auth requirements per endpoint: public, authenticated, admin-only
+- **Authentication**: who is calling? (API key, JWT, OAuth2)
+- **Authorization**: what can they do? (RBAC, ABAC, resource ownership)
+- **Default deny** — explicitly grant access per endpoint, never implicitly allow
+- **Document per endpoint**: public, authenticated, or admin-only — this goes in the OpenAPI spec
 
 ## 6. Write the OpenAPI Specification
 

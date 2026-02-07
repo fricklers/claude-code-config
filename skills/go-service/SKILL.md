@@ -15,11 +15,11 @@ Organize the service using standard Go project layout:
 
 ## 2. Dependency Injection
 
-Wire dependencies explicitly in `main.go` — no global state, no init() functions:
-- Pass dependencies as constructor arguments: `func NewUserService(repo UserRepo, logger *slog.Logger) *UserService`
-- Define interfaces at the consumer, not the implementor: `type UserRepo interface { ... }` lives in `service/`, not `repo/`
-- Keep interfaces small (1-3 methods) — accept the narrowest interface that satisfies the function's needs
-- Use `func main()` as the composition root — construct all dependencies, wire them together, then start
+Wire dependencies explicitly in `main.go` — no global state, no `init()` functions:
+- **Draw the dependency graph** before coding: which service depends on which repository, logger, or config?
+- **Constructor injection only**: `func NewUserService(repo UserRepo, logger *slog.Logger) *UserService`
+- **`func main()` is the composition root** — construct all dependencies, wire them together, then start
+- **Verify testability**: every constructor should accept interfaces, making it possible to pass mocks in tests
 
 ## 3. Structured Logging with slog
 
@@ -37,22 +37,21 @@ Handle termination signals so in-flight requests complete:
 - Close database connections, flush logs, and release resources in deferred cleanup
 - Log shutdown progress: "shutting down", "connections drained", "shutdown complete"
 
-## 5. Error Handling
+## 5. Error Handling Strategy
 
-Use Go's error conventions consistently:
-- Return `error` as the last value — check it immediately, never defer
-- Wrap with context: `fmt.Errorf("create user: %w", err)` — the chain should read like a stack trace
-- Define sentinel errors for expected failures: `var ErrNotFound = errors.New("not found")`
-- Map errors to HTTP status codes in the handler layer, not in business logic
+Design the error flow across layers before implementing:
+- **Map every error to an HTTP status** in the handler layer — business logic returns domain errors, handlers translate
+- **Wrap with context at each layer boundary**: `fmt.Errorf("userService.Create: %w", err)` — the chain reads like a call stack
+- **List sentinel errors upfront**: `var ErrNotFound`, `var ErrConflict`, etc. — define them before writing the code that returns them
+- **Log once, at the top**: handlers log the full error chain; lower layers wrap and propagate, never log
 
 ## 6. Testing with Race Detection
 
 Write tests that catch concurrency bugs:
-- Run all tests with `-race`: `go test -race ./...`
-- Table-driven tests: `tests := []struct{ name string; ... }{ ... }` with `t.Run(tc.name, ...)`
-- Call `t.Parallel()` in every test that doesn't share mutable state
-- Use `httptest.NewServer` for handler tests, mock interfaces for service-layer tests
-- Use `t.Helper()` in all test helper functions for accurate line reporting
+- **Always run with `-race`**: `go test -race ./...` — make this the default in CI and local dev
+- **Test each layer independently**: `httptest.NewServer` for handlers, mock interfaces for services, real DB for repos
+- **Stress-test concurrent paths**: launch N goroutines hitting the same endpoint and assert no races or data corruption
+- **Measure coverage on critical paths**: `go test -coverprofile=cover.out ./internal/service/` — review uncovered branches
 
 ## 7. Verify Before Shipping
 
