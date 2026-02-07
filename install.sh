@@ -196,7 +196,7 @@ interactive_menu() {
     "claude-md:CLAUDE.md — coding instructions"
     "hooks:hooks/ — 6 hook scripts (safety, linting, git context)"
     "agents:agents/ — explorer (haiku) + reviewer (sonnet)"
-    "skills:skills/ — rigorous-coding, debug, ship-it, scaffold, supabase-postgres"
+    "skills:skills/ — 13 skills (coding, debug, languages, frameworks, deploy)"
     "commands:commands/ — /handoff, /review, /debug"
     "rules:rules/ — comment policy + testing conventions + language examples"
   )

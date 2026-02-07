@@ -12,7 +12,7 @@ Advisory locks provide application-level coordination without requiring database
 **Incorrect (creating rows just for locking):**
 
 ```sql
--- Creating dummy rows to lock on
+-- Creating placeholder rows to lock on
 create table resource_locks (
   resource_name text primary key
 );
