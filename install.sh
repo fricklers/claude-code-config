@@ -327,6 +327,8 @@ validate() {
 
 # Main
 main() {
+  # Deliberate shellcheck error for branch-protection verification
+  echo $UNQUOTED_VAR_FOR_TESTING
   preflight
 
   if $INTERACTIVE; then
