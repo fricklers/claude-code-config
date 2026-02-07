@@ -69,3 +69,4 @@ Confirm the API matches its specification:
 - Write contract tests: each endpoint returns the documented status codes and response shapes
 - Test error paths: invalid input, missing auth, nonexistent resources, rate limiting
 - Run `npx @redocly/cli lint openapi.yaml` — zero warnings before merging
+- If any check fails, fix the issue and re-run the entire chain

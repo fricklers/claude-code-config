@@ -51,3 +51,4 @@ Before marking work complete, verify strictness in the changed files:
 - Run the linter: `npx eslint --rule '{"@typescript-eslint/no-explicit-any": "error"}' <changed-files>`
 - Confirm the diff introduces zero new `any`, `as any`, `@ts-ignore`, or `@ts-expect-error`
 - If a suppression is genuinely unavoidable, add a comment explaining exactly why it's safe
+- If any check fails, fix the issue and re-run the entire chain

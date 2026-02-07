@@ -52,3 +52,4 @@ Let `cargo` prove the design is sound:
 - `cargo clippy -- -D warnings` — treat all clippy lints as errors
 - `cargo test` — all type-level assertions and conversion tests pass
 - If the compiler fights you, the model is wrong — redesign the types, don't add `unwrap()` or `clone()`
+- If any step fails, fix the design and re-run the entire chain

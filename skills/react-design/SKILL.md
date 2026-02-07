@@ -55,3 +55,4 @@ Write tests against the public API, not internal implementation:
 - Assert on visible output: text content, ARIA roles, element presence — never test internal state
 - Test accessibility: `expect(screen.getByRole('button')).toBeInTheDocument()`
 - Run with `npx vitest` or `npx jest` — zero failures
+- If any test fails, fix the issue and re-run the entire suite
