@@ -59,7 +59,7 @@ Detect deadlocks in logs:
 -- Check for recent deadlocks
 select * from pg_stat_database where deadlocks > 0;
 
--- Enable deadlock logging
+-- Turn on deadlock logging
 set log_lock_waits = on;
 set deadlock_timeout = '1s';
 ```

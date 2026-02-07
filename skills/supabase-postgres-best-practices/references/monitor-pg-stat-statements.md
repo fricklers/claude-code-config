@@ -1,11 +1,11 @@
 ---
-title: Enable pg_stat_statements for Query Analysis
+title: Activate pg_stat_statements for Query Analysis
 impact: LOW-MEDIUM
 impactDescription: Identify top resource-consuming queries
 tags: pg-stat-statements, monitoring, statistics, performance
 ---
 
-## Enable pg_stat_statements for Query Analysis
+## Activate pg_stat_statements for Query Analysis
 
 pg_stat_statements tracks execution statistics for all queries, helping identify slow and frequent queries.
 
@@ -19,7 +19,7 @@ pg_stat_statements tracks execution statistics for all queries, helping identify
 **Correct (activate and query pg_stat_statements):**
 
 ```sql
--- Enable the extension
+-- Activate the extension
 create extension if not exists pg_stat_statements;
 
 -- Find slowest queries by total time

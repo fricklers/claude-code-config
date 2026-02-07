@@ -18,7 +18,7 @@ INSTALL_RULES=false
 INSTALL_CLAUDE_MD=false
 INSTALL_CHECK=false
 
-# Colors (disabled if not a terminal)
+# Colors (turned off if not a terminal)
 if [ -t 1 ]; then
   GREEN='\033[0;32m'
   YELLOW='\033[0;33m'

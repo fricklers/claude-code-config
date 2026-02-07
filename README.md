@@ -2,7 +2,7 @@
 
 **The config that respects your intelligence.**
 
-34 files. Every piece earns its place. Nothing is filler. The only config that ships a complete, documented `settings.json` with all hooks pre-wired. Zero external dependencies beyond `jq`. Each hook is under 50 lines of bash.
+69 files. Every piece earns its place. Nothing is filler. The only config that ships a complete, documented `settings.json` with all hooks pre-wired. Zero external dependencies beyond `jq`. Each hook is under 50 lines of bash.
 
 We analyzed [10 major Claude Code configurations](#credits) across the ecosystem — from the 41k-star everything-configs to Claude Code's creator's own setup. Most configs suffer from massive context overhead, broken plugin dependencies, and passive documentation masquerading as skills. This is the opposite.
 
@@ -134,7 +134,7 @@ exit 0
 
 ## Philosophy
 
-**Why 34 files, not 100?**
+**Why 69 files, not 300?**
 
 Claude Code's creator uses a CLAUDE.md under 2,500 tokens. His most important hook is 3 lines. His insight: **"Give Claude a way to verify its work = 2-3x quality."** The simpler the config, the more reliably Claude follows it.
 
