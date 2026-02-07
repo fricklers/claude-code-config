@@ -22,7 +22,7 @@ select * from orders;  -- Returns ALL orders
 **Correct (database-enforced RLS):**
 
 ```sql
--- Enable RLS on the table
+-- Activate RLS on the table
 alter table orders enable row level security;
 
 -- Create policy for users to see only their orders

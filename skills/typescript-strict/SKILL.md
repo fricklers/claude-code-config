@@ -14,11 +14,11 @@ Before writing new code, search for tech debt in the affected files:
 
 ## 2. Model Domain Types First
 
-Design types before writing logic:
-- Define discriminated unions for state: `{ status: 'idle' } | { status: 'loading' } | { status: 'error'; error: AppError } | { status: 'ok'; data: T }`
+Design types before writing logic — types are the specification:
+- **Sketch the type graph** on paper or in comments before coding: which types reference which?
 - Use branded types for IDs: `type UserId = string & { readonly __brand: 'UserId' }`
 - Extract shared shapes into a `types/` directory — one file per domain concept
-- Prefer `interface` for object shapes, `type` for unions and computed types
+- Run `npx tsc --noEmit` after each type change to catch cascading breakage early
 
 ## 3. Configure Strictness
 
@@ -29,13 +29,13 @@ Verify `tsconfig.json` has maximum strictness activated:
 - `"noImplicitOverride": true` — catches accidental method overrides
 - If any of these are missing, add them and fix the resulting errors before continuing
 
-## 4. Write Type-Safe Code
+## 4. Eliminate Escape Hatches
 
-Every function and variable must satisfy these constraints:
-- **Explicit return types** on all exported functions — no inferred public API
-- **No `any`** — use `unknown` and narrow with type guards or `zod` schemas
-- **No type assertions** (`as X`) — restructure the code so types flow naturally
-- **Readonly by default** — `readonly` arrays, `Readonly<T>` props, `as const` literals
+Systematically remove every type-safety bypass in the code you touch:
+- **Audit `any`**: search for `any` in changed files — replace each with a specific type or `unknown` + guard
+- **Audit assertions**: search for `as X` — restructure data flow so the cast is unnecessary
+- **Audit suppressions**: search for `@ts-ignore` / `@ts-expect-error` — fix the underlying type error
+- **Track progress**: count remaining escape hatches before and after — the number must go down
 
 ## 5. Validate at Boundaries
 
@@ -51,3 +51,4 @@ Before marking work complete, verify strictness in the changed files:
 - Run the linter: `npx eslint --rule '{"@typescript-eslint/no-explicit-any": "error"}' <changed-files>`
 - Confirm the diff introduces zero new `any`, `as any`, `@ts-ignore`, or `@ts-expect-error`
 - If a suppression is genuinely unavoidable, add a comment explaining exactly why it's safe
+- If any check fails, fix the issue and re-run the entire chain

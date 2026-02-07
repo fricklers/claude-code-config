@@ -59,3 +59,4 @@ Confirm the application works in production mode:
 - `npx next lint` — all lint rules pass
 - Review the build output: static vs dynamic pages, bundle sizes, route segments
 - Test Server Actions with form submissions — they must work without JavaScript activated
+- If any step fails, fix the issue and re-run the entire chain

@@ -23,11 +23,11 @@ Use `uv` for fast, reproducible dependency management:
 
 ## 3. Type Everything
 
-Apply type hints systematically:
-- All function signatures: parameters and return types — no exceptions
-- Use `from __future__ import annotations` at the top of every file
-- Prefer `collections.abc` types (`Sequence`, `Mapping`) over concrete types in public signatures
-- Use `dataclasses` or Pydantic `BaseModel` for structured data — never raw dicts for domain objects
+Set up the project for strict typing from day one:
+- **Add `from __future__ import annotations`** to every new file via a project template or snippet
+- **Run `uv run mypy src/ --strict`** after adding each module to catch gaps immediately
+- **Audit untyped boundaries**: any function accepting or returning `dict` or `Any` needs a typed replacement
+- **Generate stubs** for untyped dependencies: `uv run stubgen -p <package>` or add `[[tool.mypy.overrides]]`
 
 ## 4. Configure Ruff
 
@@ -40,8 +40,8 @@ line-length = 88
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "UP", "B", "SIM", "TCH", "RUF"]
 ```
-- Run `uv run ruff check --fix .` before every commit
-- Run `uv run ruff format .` for consistent formatting
+- **Run `uv run ruff check --fix .`** before every commit
+- **Run `uv run ruff format .`** for consistent formatting
 - Fix all violations — no `# noqa` unless the rule is genuinely inapplicable
 
 ## 5. Configure Mypy
@@ -53,17 +53,17 @@ strict = true
 warn_return_any = true
 warn_unreachable = true
 ```
-- Run `uv run mypy src/` — zero errors required
+- **Run `uv run mypy src/`** — zero errors required
 - For third-party packages without stubs, add specific `[[tool.mypy.overrides]]` instead of blanket ignores
-- Never use `# type: ignore` without a specific error code: `# type: ignore[override]`
+- **Never use bare `# type: ignore`** — always include a specific error code: `# type: ignore[override]`
 
 ## 6. Write Tests with pytest
 
 Structure tests to mirror the source layout:
-- `tests/test_<module>.py` for each source module
+- **`tests/test_<module>.py`** for each source module
 - Use `pytest` fixtures for setup/teardown, `conftest.py` for shared fixtures
 - Use `pytest.mark.parametrize` for multiple input cases
-- Run with `uv run pytest -x --tb=short` — stop on first failure during development
+- **Run with `uv run pytest -x --tb=short`** — stop on first failure during development
 
 ## 7. Verify the Full Pipeline
 

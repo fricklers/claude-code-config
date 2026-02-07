@@ -7,35 +7,35 @@ When this skill is active, follow this 6-step discipline for designing Rust type
 
 ## 1. Map the Domain to Types
 
-Before writing any logic, model the domain:
-- One struct per entity, one enum per state machine or variant set
-- Use newtypes for identity: `struct UserId(Uuid)` — prevents mixing different ID types
-- Use `#[non_exhaustive]` on public enums to allow future variants without breaking changes
-- Derive `Debug`, `Clone`, `PartialEq` on data types by default — add `Eq`, `Hash`, `Serialize` only when needed
+Before writing any logic, sketch the type graph:
+- **List every entity and relationship** — draw a dependency diagram (even in comments)
+- **One struct per entity, one enum per variant set** — if two concepts have different lifecycles, they're separate types
+- **Decide visibility upfront**: which types are `pub`? Which fields? Start private, widen only when needed
+- **Write type signatures first** — `fn process(order: &Order) -> Result<Receipt, OrderError>` before any body
 
 ## 2. Design the Error Hierarchy
 
-Build typed errors before writing fallible code:
-- Define a crate-level error enum with `thiserror`: one variant per failure category
-- Each variant wraps the underlying error type: `#[error("database query failed")] Db(#[from] sqlx::Error)`
-- Application binaries use `anyhow` for top-level error handling; libraries never do
-- Map external errors at crate boundaries — don't leak third-party types through public APIs
+Build the error tree before writing fallible code:
+- **Enumerate failure modes**: list every way each operation can fail — network, parse, validation, not-found
+- **Group by recovery strategy**: errors the caller can retry vs errors that are fatal determine your variant structure
+- **Map external errors at boundaries** — don't leak third-party types through public APIs; wrap them in domain errors
+- **Write the `Display` messages for humans**: each `#[error("...")]` string should be actionable, not just descriptive
 
 ## 3. Encode Invariants in the Type System
 
-Use the compiler to prevent invalid states:
+Make illegal states unrepresentable — push validation into types:
 - **Typestate pattern**: `struct Order<S: State>` with `impl Order<Draft>` and `impl Order<Confirmed>` — impossible to ship an unconfirmed order
-- **Enums over booleans**: `enum Visibility { Public, Private }` instead of `is_public: bool`
+- **Ask "can this field be invalid?"** — if yes, use a newtype that validates on construction
 - **NonZero types** for values that must not be zero: `NonZeroU32` for counts, ports, IDs
 - **Builder pattern** for types with many optional fields — `Default` + method chaining
 
 ## 4. Model Ownership and Borrowing
 
 Decide ownership boundaries before writing implementations:
-- Functions that only read data take `&self` or `&T`
-- Functions that transform data take `self` (owned) and return a new value
-- Use `Cow<'_, str>` when a function might or might not need to allocate
-- Avoid `Arc<Mutex<T>>` as a first resort — prefer message passing with channels or simpler ownership
+- **Draw the ownership tree**: which struct owns which data? Where are the borrows?
+- **Annotate each function signature** with `&self`, `&mut self`, or `self` — this determines your API's flexibility
+- **Identify shared-state points**: if two subsystems need the same data, decide channels vs `Arc` before coding
+- **Benchmark before cloning**: if you reach for `.clone()`, measure whether borrowing is feasible first
 
 ## 5. Write Conversion Traits
 
@@ -52,3 +52,4 @@ Let `cargo` prove the design is sound:
 - `cargo clippy -- -D warnings` — treat all clippy lints as errors
 - `cargo test` — all type-level assertions and conversion tests pass
 - If the compiler fights you, the model is wrong — redesign the types, don't add `unwrap()` or `clone()`
+- If any step fails, fix the design and re-run the entire chain

@@ -39,8 +39,8 @@ Check your driver settings:
 
 ```sql
 -- Many drivers use prepared statements by default
--- Node.js pg: { prepare: false } to disable
--- JDBC: prepareThreshold=0 to disable
+-- Node.js pg: { prepare: false } to turn off
+-- JDBC: prepareThreshold=0 to turn off
 ```
 
 Reference: [Prepared Statements with Pooling](https://supabase.com/docs/guides/database/connecting-to-postgres#connection-pool-modes)

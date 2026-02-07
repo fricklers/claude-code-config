@@ -54,3 +54,4 @@ Confirm the container works before deploying:
 - `docker image ls <image>` — verify final image size is reasonable (target: under 200MB for most services)
 - `docker scout cves <image>` — zero critical or high vulnerabilities
 - Test with production-like config: environment variables, network isolation, resource limits
+- If any step fails, fix the issue and re-run the entire chain

@@ -18,7 +18,7 @@ INSTALL_RULES=false
 INSTALL_CLAUDE_MD=false
 INSTALL_CHECK=false
 
-# Colors (disabled if not a terminal)
+# Colors (turned off if not a terminal)
 if [ -t 1 ]; then
   GREEN='\033[0;32m'
   YELLOW='\033[0;33m'
@@ -196,7 +196,7 @@ interactive_menu() {
     "claude-md:CLAUDE.md — coding instructions"
     "hooks:hooks/ — 6 hook scripts (safety, linting, git context)"
     "agents:agents/ — explorer (haiku) + reviewer (sonnet)"
-    "skills:skills/ — rigorous-coding, debug, ship-it, scaffold, supabase-postgres"
+    "skills:skills/ — 13 skills (coding, debug, languages, frameworks, deploy)"
     "commands:commands/ — /handoff, /review, /debug"
     "rules:rules/ — comment policy + testing conventions + language examples"
   )
@@ -336,8 +336,8 @@ check_skills() {
     fi
 
     local repo_hash installed_hash
-    repo_hash=$(find "$skill_dir" -type f | sort | xargs shasum 2>/dev/null | shasum | awk '{print $1}')
-    installed_hash=$(find "$installed_dir" -type f | sort | xargs shasum 2>/dev/null | shasum | awk '{print $1}')
+    repo_hash=$(cd "$skill_dir" && find . -type f | sort | xargs shasum 2>/dev/null | shasum | awk '{print $1}')
+    installed_hash=$(cd "$installed_dir" && find . -type f | sort | xargs shasum 2>/dev/null | shasum | awk '{print $1}')
 
     if [ "$repo_hash" = "$installed_hash" ]; then
       echo -e "  ${GREEN}[OK]${NC}      $name"

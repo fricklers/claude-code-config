@@ -24,10 +24,10 @@ Design the props interface before implementing the component:
 ## 3. Assign State Ownership
 
 Decide where each piece of state lives before writing hooks:
-- **Local state** (`useState`): UI-only state like open/closed, hover, input value
-- **Lifted state**: state shared between siblings lives in the lowest common ancestor
-- **Server state** (`TanStack Query`): data from APIs — never duplicate in `useState`
-- **URL state** (`useSearchParams`): anything that should survive a page refresh or be shareable
+- **Inventory every piece of state** the feature needs — list them all before placing any
+- **Categorize each one**: UI-local (open/closed), shared (lifted), server-fetched, or URL-persisted
+- **Draw the data flow**: which component owns each state, which receive it as props, which dispatch updates
+- **Identify derived state**: if a value can be computed from other state, compute it — don't store it separately
 - Rule: if two components need the same state, lift it — don't sync with `useEffect`
 
 ## 4. Build Accessibility In
@@ -55,3 +55,4 @@ Write tests against the public API, not internal implementation:
 - Assert on visible output: text content, ARIA roles, element presence — never test internal state
 - Test accessibility: `expect(screen.getByRole('button')).toBeInTheDocument()`
 - Run with `npx vitest` or `npx jest` — zero failures
+- If any test fails, fix the issue and re-run the entire suite
