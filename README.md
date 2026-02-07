@@ -2,7 +2,7 @@
 
 **The config that respects your intelligence.**
 
-34 files. Every piece earns its place. Nothing is filler. The only config that ships a complete, documented `settings.json` with all hooks pre-wired. Zero external dependencies beyond `jq`. Each hook is under 40 lines of bash.
+34 files. Every piece earns its place. Nothing is filler. The only config that ships a complete, documented `settings.json` with all hooks pre-wired. Zero external dependencies beyond `jq`. Each hook is under 50 lines of bash.
 
 We analyzed [10 major Claude Code configurations](#credits) across the ecosystem — from the 41k-star everything-configs to Claude Code's creator's own setup. Most configs suffer from massive context overhead, broken plugin dependencies, and passive documentation masquerading as skills. This is the opposite.
 
@@ -48,7 +48,7 @@ chmod +x ~/.claude/hooks/*.sh
 | `hooks/check-todos.sh` | `~/.claude/hooks/` | Blocks Claude from stopping with incomplete todos |
 | `agents/explorer.md` | `~/.claude/agents/` | haiku-powered, read-only — fast codebase search with parallel strategies |
 | `agents/reviewer.md` | `~/.claude/agents/` | sonnet-powered, read-only — code review (bugs, security, perf, coverage) |
-| `skills/` *(13 skills)* | `~/.claude/skills/` | rigorous-coding, debug, scaffold, ship-it, typescript-strict, python-modern, rust-modeling, go-service, nextjs-app, react-design, api-first, docker-deploy, supabase-postgres |
+| `skills/` *(13 skills)* | `~/.claude/skills/` | rigorous-coding, debug, scaffold, ship-it, typescript-strict, python-modern, rust-modeling, go-service, nextjs-app, react-design, api-first, docker-deploy, supabase-postgres-best-practices |
 | `commands/handoff.md` | `~/.claude/commands/` | `/handoff` — creates session continuity document for resuming later |
 | `commands/review.md` | `~/.claude/commands/` | `/review [file]` — code review using the reviewer agent |
 | `commands/debug.md` | `~/.claude/commands/` | `/debug` — hypothesis-driven debugging using the debug skill |

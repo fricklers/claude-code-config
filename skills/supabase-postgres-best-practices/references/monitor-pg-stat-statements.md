@@ -16,7 +16,7 @@ pg_stat_statements tracks execution statistics for all queries, helping identify
 -- No way to know without pg_stat_statements
 ```
 
-**Correct (enable and query pg_stat_statements):**
+**Correct (activate and query pg_stat_statements):**
 
 ```sql
 -- Enable the extension

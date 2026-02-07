@@ -46,7 +46,7 @@ Common sources of mixed-case identifiers:
 ```sql
 -- ORMs often generate quoted camelCase - configure them to use snake_case
 -- Migrations from other databases may preserve original casing
--- Some GUI tools quote identifiers by default - disable this
+-- Some GUI tools quote identifiers by default - turn this off
 
 -- If stuck with mixed-case, create views as a compatibility layer
 CREATE VIEW users AS SELECT "userId" AS user_id, "firstName" AS first_name FROM "Users";
