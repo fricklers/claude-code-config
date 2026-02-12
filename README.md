@@ -2,7 +2,7 @@
 
 **The config that respects your intelligence.**
 
-69 files. Every piece earns its place. Nothing is filler. The only config that ships a complete, documented `settings.json` with all hooks pre-wired. Zero external dependencies beyond `jq`. Each hook is under 50 lines of bash.
+Every piece earns its place. Nothing is filler. The only config that ships a complete, documented `settings.json` with all hooks pre-wired. Zero external dependencies beyond `jq`. Each hook is under 50 lines of bash.
 
 We analyzed [10 major Claude Code configurations](#credits) across the ecosystem — from the 41k-star everything-configs to Claude Code's creator's own setup. Most configs suffer from massive context overhead, broken plugin dependencies, and passive documentation masquerading as skills. This is the opposite.
 
@@ -48,7 +48,7 @@ chmod +x ~/.claude/hooks/*.sh
 | `hooks/check-todos.sh` | `~/.claude/hooks/` | Blocks Claude from stopping with incomplete todos |
 | `agents/explorer.md` | `~/.claude/agents/` | haiku-powered, read-only — fast codebase search with parallel strategies |
 | `agents/reviewer.md` | `~/.claude/agents/` | sonnet-powered, read-only — code review (bugs, security, perf, coverage) |
-| `skills/` *(13 skills)* | `~/.claude/skills/` | rigorous-coding, debug, scaffold, ship-it, typescript-strict, python-modern, rust-modeling, go-service, nextjs-app, react-design, api-first, docker-deploy, supabase-postgres-best-practices |
+| `skills/` *(26 skills)* | `~/.claude/skills/` | **Custom:** rigorous-coding, debug, scaffold, ship-it, typescript-strict, python-modern, rust-modeling, go-service, nextjs-app, react-design, api-first, docker-deploy. **Vendored:** supabase-postgres-best-practices, ci-fix, create-pull-request, docs-update, github-bug-report-triage, github-issue-dedupe, mcp-builder, scheduler, seo-aeo-audit, slack-qa-investigate, terraform-style-check, web-accessibility-audit, web-performance-audit, webapp-testing |
 | `commands/handoff.md` | `~/.claude/commands/` | `/handoff` — creates session continuity document for resuming later |
 | `commands/review.md` | `~/.claude/commands/` | `/review [file]` — code review using the reviewer agent |
 | `commands/debug.md` | `~/.claude/commands/` | `/debug` — hypothesis-driven debugging using the debug skill |
@@ -134,7 +134,7 @@ exit 0
 
 ## Philosophy
 
-**Why 69 files, not 300?**
+**Why not 300 files?**
 
 Claude Code's creator uses a CLAUDE.md under 2,500 tokens. His most important hook is 3 lines. His insight: **"Give Claude a way to verify its work = 2-3x quality."** The simpler the config, the more reliably Claude follows it.
 
