@@ -42,8 +42,8 @@ Follow these rules for the content:
 
 ### Frontmatter decisions
 
-- Add `disable-model-invocation: true` if the skill has side effects (deploys, sends messages, modifies external state)
-- Add `user-invocable: false` if it's background knowledge Claude should apply automatically
+- Set `disable-model-invocation: true` to block auto-invocation when the skill has side effects (deploys, sends messages, modifies external state)
+- Set `user-invocable: false` to hide from the `/` menu when it's background knowledge Claude should apply automatically
 - Add `context: fork` if it runs an independent task that doesn't need conversation history
 - Otherwise, use defaults (both user and Claude can invoke it)
 
