@@ -279,7 +279,7 @@ extract_skill_from_tarball() {
 
   # Find the top-level directory (dynamic prefix)
   local prefix
-  prefix=$(ls "$tmp_extract" | head -1)
+  prefix=$(basename "$(find "$tmp_extract" -mindepth 1 -maxdepth 1 -type d -print -quit)")
 
   local source_dir="$tmp_extract/$prefix/$skill_path"
   if [ ! -d "$source_dir" ]; then
