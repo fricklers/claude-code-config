@@ -8,6 +8,110 @@
       "commit": "22e466937a34fe4f2c7d2d199599c7a76cbcf51f",
       "version": "1.1.0",
       "license": "MIT"
+    },
+    {
+      "name": "ci-fix",
+      "repo": "https://github.com/warpdotdev/oz-skills.git",
+      "branch": "main",
+      "path": ".agents/skills/ci-fix",
+      "commit": "2ca570e61ea029f2813ca4e0d23ddc52abc49f83",
+      "license": "MIT"
+    },
+    {
+      "name": "create-pull-request",
+      "repo": "https://github.com/warpdotdev/oz-skills.git",
+      "branch": "main",
+      "path": ".agents/skills/create-pull-request",
+      "commit": "2ca570e61ea029f2813ca4e0d23ddc52abc49f83",
+      "license": "MIT"
+    },
+    {
+      "name": "docs-update",
+      "repo": "https://github.com/warpdotdev/oz-skills.git",
+      "branch": "main",
+      "path": ".agents/skills/docs-update",
+      "commit": "2ca570e61ea029f2813ca4e0d23ddc52abc49f83",
+      "license": "MIT"
+    },
+    {
+      "name": "github-bug-report-triage",
+      "repo": "https://github.com/warpdotdev/oz-skills.git",
+      "branch": "main",
+      "path": ".agents/skills/github-bug-report-triage",
+      "commit": "2ca570e61ea029f2813ca4e0d23ddc52abc49f83",
+      "license": "MIT"
+    },
+    {
+      "name": "github-issue-dedupe",
+      "repo": "https://github.com/warpdotdev/oz-skills.git",
+      "branch": "main",
+      "path": ".agents/skills/github-issue-dedupe",
+      "commit": "2ca570e61ea029f2813ca4e0d23ddc52abc49f83",
+      "license": "MIT"
+    },
+    {
+      "name": "mcp-builder",
+      "repo": "https://github.com/warpdotdev/oz-skills.git",
+      "branch": "main",
+      "path": ".agents/skills/mcp-builder",
+      "commit": "2ca570e61ea029f2813ca4e0d23ddc52abc49f83",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "scheduler",
+      "repo": "https://github.com/warpdotdev/oz-skills.git",
+      "branch": "main",
+      "path": ".agents/skills/scheduler",
+      "commit": "2ca570e61ea029f2813ca4e0d23ddc52abc49f83",
+      "license": "MIT"
+    },
+    {
+      "name": "seo-aeo-audit",
+      "repo": "https://github.com/warpdotdev/oz-skills.git",
+      "branch": "main",
+      "path": ".agents/skills/seo-aeo-audit",
+      "commit": "2ca570e61ea029f2813ca4e0d23ddc52abc49f83",
+      "license": "MIT"
+    },
+    {
+      "name": "slack-qa-investigate",
+      "repo": "https://github.com/warpdotdev/oz-skills.git",
+      "branch": "main",
+      "path": ".agents/skills/slack-qa-investigate",
+      "commit": "2ca570e61ea029f2813ca4e0d23ddc52abc49f83",
+      "license": "MIT"
+    },
+    {
+      "name": "terraform-style-check",
+      "repo": "https://github.com/warpdotdev/oz-skills.git",
+      "branch": "main",
+      "path": ".agents/skills/terraform-style-check",
+      "commit": "2ca570e61ea029f2813ca4e0d23ddc52abc49f83",
+      "license": "MIT"
+    },
+    {
+      "name": "web-accessibility-audit",
+      "repo": "https://github.com/warpdotdev/oz-skills.git",
+      "branch": "main",
+      "path": ".agents/skills/web-accessibility-audit",
+      "commit": "2ca570e61ea029f2813ca4e0d23ddc52abc49f83",
+      "license": "MIT"
+    },
+    {
+      "name": "web-performance-audit",
+      "repo": "https://github.com/warpdotdev/oz-skills.git",
+      "branch": "main",
+      "path": ".agents/skills/web-performance-audit",
+      "commit": "2ca570e61ea029f2813ca4e0d23ddc52abc49f83",
+      "license": "MIT"
+    },
+    {
+      "name": "webapp-testing",
+      "repo": "https://github.com/warpdotdev/oz-skills.git",
+      "branch": "main",
+      "path": ".agents/skills/webapp-testing",
+      "commit": "2ca570e61ea029f2813ca4e0d23ddc52abc49f83",
+      "license": "Apache-2.0"
     }
   ]
 }
