@@ -562,7 +562,7 @@ interactive_menu() {
     "settings:settings.json — permissions, hooks, all config"
     "claude-md:CLAUDE.md — coding instructions"
     "hooks:hooks/ — 6 hook scripts (safety, linting, git context)"
-    "agents:agents/ — explorer (haiku) + reviewer (sonnet)"
+    "agents:agents/ — explorer, reviewer, coder, tester"
     "skills:skills/ — $custom_count custom skills (coding, debug, languages, frameworks)"
     "commands:commands/ — /handoff, /review, /debug"
     "rules:rules/ — comment policy + testing conventions + language examples"
