@@ -48,6 +48,7 @@ chmod +x ~/.claude/hooks/*.sh
 | `hooks/check-todos.sh` | `~/.claude/hooks/` | Blocks Claude from stopping with incomplete todos |
 | `agents/explorer.md` | `~/.claude/agents/` | haiku-powered, read-only — fast codebase search with parallel strategies |
 | `agents/reviewer.md` | `~/.claude/agents/` | sonnet-powered, read-only — code review (bugs, security, perf, coverage) |
+| `agents/tester.md` | `~/.claude/agents/` | sonnet-powered, read-only — runs tests, linters, type checkers, reports pass/fail |
 | `skills/` *(26 skills)* | `~/.claude/skills/` | **Custom:** rigorous-coding, debug, scaffold, ship-it, typescript-strict, python-modern, rust-modeling, go-service, nextjs-app, react-design, api-first, docker-deploy. **Vendored:** supabase-postgres-best-practices, ci-fix, create-pull-request, docs-update, github-bug-report-triage, github-issue-dedupe, mcp-builder, scheduler, seo-aeo-audit, slack-qa-investigate, terraform-style-check, web-accessibility-audit, web-performance-audit, webapp-testing |
 | `commands/handoff.md` | `~/.claude/commands/` | `/handoff` — creates session continuity document for resuming later |
 | `commands/review.md` | `~/.claude/commands/` | `/review [file]` — code review using the reviewer agent |
@@ -143,7 +144,7 @@ Every skill, agent, and rule in your config consumes context budget. A 27-skill 
 Our design principles:
 - **If it doesn't change Claude's behavior, it doesn't belong in the config**
 - **Hooks > instructions** — enforced guardrails beat polite requests
-- **Cost-tiered agents** — haiku for search ($), sonnet for review ($$), no reason to run Opus for file search
+- **Cost-tiered agents** — haiku for search ($), sonnet for review and validation ($$) — Sonnet 4.6 approaches Opus on many coding tasks at a fraction of the cost
 - **Zero external dependencies** — no npm packages, no Python scripts, no MCP plugins to install
 - **Every hook is auditable in seconds** — bash + jq, no transpilation, no runtime
 
