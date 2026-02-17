@@ -36,7 +36,7 @@ This configuration was built by analyzing and learning from the best Claude Code
 |----------------|-----------|-------------|
 | Read-only agents prevent accidental modifications | affaan-m | Both agents are read-only (Bash, Glob, Grep, Read only) |
 | Simplicity beats comprehensiveness for CLAUDE.md | Boris Cherny | ~50 lines, ~800 tokens — every line earned |
-| Cost-tiered models save money without quality loss | jarrodwatts, Matt-Dionis | haiku for search, sonnet for review |
+| Cost-tiered models save money without quality loss | jarrodwatts, Matt-Dionis | haiku for search, sonnet for review and validation (Sonnet 4.6 approaches Opus on many coding tasks) |
 | Session continuity is the #1 missing feature | rohitg00, ykdojo | `/handoff` command creates structured continuity docs |
 | Hooks enforce better than instructions | Boris Cherny, ChrisWiles | 6 hooks covering safety, linting, and context |
 | Zero external deps = zero broken installs | Matt-Dionis | bash + jq only, no npm/pip/cargo |
