@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Pre-commit hook: runs shellcheck + JSON validation before every commit.
+# Install with: ./install.sh --setup-dev
+set -euo pipefail
+
+"$(git rev-parse --show-toplevel)/scripts/lint.sh"

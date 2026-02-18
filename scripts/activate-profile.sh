@@ -140,7 +140,8 @@ apply_to_project() {
   else
     # Backup existing settings to /tmp/ (not .claude/ to avoid git noise), then
     # replace enabledPlugins with profile additions. Previous profile plugins are cleared.
-    local backup="/tmp/claude-settings-backup-$(date +%Y%m%d%H%M%S).json"
+    local backup
+    backup="/tmp/claude-settings-backup-$(date +%Y%m%d%H%M%S).json"
     cp "$project_settings" "$backup"
     ok "Backed up: $project_settings → $backup"
     tmp_out=$(mktemp ".claude/settings.tmp.XXXXXX")
@@ -193,7 +194,8 @@ apply_globally() {
   fi
 
   # Backup before modifying global settings (go to /tmp/ so they get cleaned up by OS)
-  local backup="/tmp/claude-global-settings-backup-$(date +%Y%m%d%H%M%S).json"
+  local backup
+  backup="/tmp/claude-global-settings-backup-$(date +%Y%m%d%H%M%S).json"
   cp "$GLOBAL_SETTINGS" "$backup"
   ok "Backed up: $GLOBAL_SETTINGS → $backup"
 

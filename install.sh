@@ -24,6 +24,7 @@ INSTALL_LIST_VENDORED=false
 INSTALL_PROJECT_SKILLS=false
 ACTIVATE_PROFILE=""
 ACTIVATE_PROFILE_GLOBAL=false
+SETUP_DEV=false
 
 # Colors (turned off if not a terminal)
 if [ -t 1 ]; then
@@ -64,6 +65,7 @@ Options:
   --profile <name>   Activate plugin profile for current project (see profiles/)
   --profile-global <name>  Activate plugin profile globally in ~/.claude/settings.json
   --list-profiles    List available plugin profiles
+  --setup-dev        Configure git hooks for contributing (core.hooksPath = .githooks)
   --no-backup        Skip backup of existing files
   --dry-run          Show what would be done without doing it
   -y, --yes          Skip confirmation prompts
@@ -108,6 +110,7 @@ while [[ $# -gt 0 ]]; do
       ACTIVATE_PROFILE="$1"; ACTIVATE_PROFILE_GLOBAL=true; INTERACTIVE=false ;;
     --list-profiles)
       "$SCRIPT_DIR/scripts/activate-profile.sh" --list; exit $? ;;
+    --setup-dev)       SETUP_DEV=true; INTERACTIVE=false ;;
     --check)           INSTALL_CHECK=true; INTERACTIVE=false ;;
     --no-backup)       BACKUP=false ;;
     --dry-run)         DRY_RUN=true ;;
@@ -599,6 +602,7 @@ interactive_menu() {
   echo ""
   echo "  a) Install everything (custom only, no network fetch)"
   echo "  p) Activate plugin profile (interactive)"
+  echo "  d) Setup dev environment (git hooks for contributors)"
   echo "  q) Quit"
   echo ""
 
@@ -621,6 +625,7 @@ interactive_menu() {
       fi
       exit $?
       ;;
+    d|D) SETUP_DEV=true ;;
     a|A) INSTALL_ALL=true; INSTALL_SETTINGS=true; INSTALL_HOOKS=true; INSTALL_AGENTS=true
           INSTALL_SKILLS=true; INSTALL_COMMANDS=true; INSTALL_RULES=true; INSTALL_CLAUDE_MD=true ;;
     *)
@@ -814,9 +819,35 @@ validate() {
   fi
 }
 
+# Configure git hooks for contributors
+setup_dev() {
+  if ! git rev-parse --git-dir &>/dev/null 2>&1; then
+    err "Not inside a git repository"
+    exit 1
+  fi
+
+  if ! command -v shellcheck &>/dev/null; then
+    warn "shellcheck not found — install it so hooks can run: brew install shellcheck"
+  fi
+
+  if $DRY_RUN; then
+    info "Would run: git config core.hooksPath .githooks"
+    return
+  fi
+
+  git config core.hooksPath .githooks
+  ok "Git hooks configured: core.hooksPath = .githooks"
+  info "shellcheck will run on every commit."
+}
+
 # Main
 main() {
-  # Profile activation doesn't need vendored.json — handle before preflight
+  # Dev setup and profile activation don't need vendored.json — handle before preflight
+  if $SETUP_DEV; then
+    setup_dev
+    exit $?
+  fi
+
   if [ -n "$ACTIVATE_PROFILE" ]; then
     if ! command -v jq &>/dev/null; then
       err "jq is required but not found. Install it: brew install jq"
@@ -865,6 +896,12 @@ main() {
 
   if $INTERACTIVE; then
     interactive_menu
+  fi
+
+  # Dev setup chosen interactively
+  if $SETUP_DEV; then
+    setup_dev
+    exit $?
   fi
 
   # Determine if we have anything to do
