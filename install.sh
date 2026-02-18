@@ -821,8 +821,9 @@ validate() {
 
 # Configure git hooks for contributors
 setup_dev() {
-  if ! git rev-parse --git-dir &>/dev/null 2>&1; then
-    err "Not inside a git repository"
+  # Verify we have the .githooks directory (guards against running from a wrong location)
+  if [ ! -d "$SCRIPT_DIR/.githooks" ]; then
+    err ".githooks/ not found under $SCRIPT_DIR — run this from the claude-code-config repo"
     exit 1
   fi
 
@@ -831,11 +832,12 @@ setup_dev() {
   fi
 
   if $DRY_RUN; then
-    info "Would run: git config core.hooksPath .githooks"
+    info "Would run: git -C \"$SCRIPT_DIR\" config core.hooksPath .githooks"
     return
   fi
 
-  git config core.hooksPath .githooks
+  # Use -C to target the claude-code-config repo regardless of the caller's CWD
+  git -C "$SCRIPT_DIR" config core.hooksPath .githooks
   ok "Git hooks configured: core.hooksPath = .githooks"
   info "shellcheck will run on every commit."
 }
@@ -955,7 +957,12 @@ main() {
       while IFS= read -r name; do
         all_vendored+=("$name")
       done < <(vendored_skill_names)
-      fetch_vendored_batch "${all_vendored[@]}"
+      # Guard against empty array: bash 3.x throws unbound variable on "${arr[@]}" when empty
+      if [ ${#all_vendored[@]} -gt 0 ]; then
+        fetch_vendored_batch "${all_vendored[@]}"
+      else
+        warn "No vendored skills defined in vendored.json"
+      fi
     else
       info "Skipping vendored skills."
     fi

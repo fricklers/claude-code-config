@@ -11,7 +11,12 @@ if ! command -v shellcheck &>/dev/null; then
 fi
 
 echo "Running shellcheck..."
-shellcheck "$REPO_DIR/install.sh" "$REPO_DIR/hooks"/*.sh "$REPO_DIR/scripts"/*.sh
+# Collect targets via find so empty hook/script dirs don't expand to a literal glob pattern
+shellcheck_targets=("$REPO_DIR/install.sh")
+while IFS= read -r f; do
+  shellcheck_targets+=("$f")
+done < <(find "$REPO_DIR/hooks" "$REPO_DIR/scripts" -name '*.sh' -type f 2>/dev/null | sort)
+shellcheck "${shellcheck_targets[@]}"
 echo "shellcheck passed."
 
 if command -v jq &>/dev/null; then
