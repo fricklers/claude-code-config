@@ -201,9 +201,6 @@ merge_settings() {
   # Use activate-profile.sh to add project-specific plugins on top.
   local merged
   merged=$(jq -s '
-    def union_arrays: [.[0][], .[1][]] | unique;
-
-    # Start with existing config
     .[0] as $existing | .[1] as $new |
 
     # Merge permissions
@@ -616,10 +613,12 @@ interactive_menu() {
       read -r -p "$(echo -e "${YELLOW}?${NC} Profile name (or 'q' to cancel): ")" chosen_profile
       if [[ "$chosen_profile" == "q" || -z "$chosen_profile" ]]; then echo "Cancelled."; exit 0; fi
       read -r -p "$(echo -e "${YELLOW}?${NC} Apply globally? [y/N] ")" global_choice
+      local dry_flag=""
+      $DRY_RUN && dry_flag="--dry-run"
       if [[ "$global_choice" =~ ^[Yy] ]]; then
-        "$SCRIPT_DIR/scripts/activate-profile.sh" "$chosen_profile" --global
+        "$SCRIPT_DIR/scripts/activate-profile.sh" "$chosen_profile" --global $dry_flag
       else
-        "$SCRIPT_DIR/scripts/activate-profile.sh" "$chosen_profile"
+        "$SCRIPT_DIR/scripts/activate-profile.sh" "$chosen_profile" $dry_flag
       fi
       exit 0
       ;;

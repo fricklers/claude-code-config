@@ -39,9 +39,17 @@ fi
 DRY_RUN=false
 
 list_profiles() {
+  if [ ! -d "$PROFILES_DIR" ]; then
+    echo "Error: profiles/ directory not found at $PROFILES_DIR" >&2
+    exit 1
+  fi
+
   bold "Available profiles:"
   echo ""
+  local found=false
   for profile_file in "$PROFILES_DIR"/*.json; do
+    [ -f "$profile_file" ] || continue
+    found=true
     local name
     name=$(basename "$profile_file" .json)
     local desc
@@ -57,10 +65,13 @@ list_profiles() {
     fi
     echo ""
   done
+  if ! $found; then
+    echo "  (no profiles found in $PROFILES_DIR)"
+  fi
 }
 
 show_status() {
-  bold "Global plugins (~/.claude/settings.json):"
+  bold "Global plugins ($GLOBAL_SETTINGS):"
   if [ -f "$GLOBAL_SETTINGS" ]; then
     jq -r '.enabledPlugins // {} | to_entries[] | "  \(if .value then "✓" else "✗" end) \(.key | gsub("@claude-plugins-official";""))"' "$GLOBAL_SETTINGS" 2>/dev/null || echo "  (none)"
   else
@@ -120,9 +131,9 @@ apply_to_project() {
     # Create minimal project settings with just the profile plugins
     jq -n --argjson plugins "$new_plugins" '{"enabledPlugins": $plugins}' > "$project_settings"
   else
-    # Backup existing settings, then replace enabledPlugins with profile additions.
-    # Plugins from a previous profile are cleared; only this profile's additions remain.
-    local backup="${project_settings}.backup.$(date +%Y%m%d%H%M%S)"
+    # Backup existing settings to /tmp/ (not .claude/ to avoid git noise), then
+    # replace enabledPlugins with profile additions. Previous profile plugins are cleared.
+    local backup="/tmp/claude-settings-backup-$(date +%Y%m%d%H%M%S).json"
     cp "$project_settings" "$backup"
     ok "Backed up: $project_settings → $backup"
     local updated
@@ -193,8 +204,14 @@ while [[ $# -gt 0 ]]; do
     --status)    COMMAND="status" ;;
     --global)    GLOBAL=true ;;
     --dry-run)   DRY_RUN=true ;;
-    -*)          echo "Unknown option: $1" >&2; exit 1 ;;
-    *)           PROFILE="$1" ;;
+    -*)          echo "Error: unknown option: $1" >&2; exit 1 ;;
+    *)
+      if [ -n "$PROFILE" ]; then
+        echo "Error: unexpected argument '$1' (profile '$PROFILE' already specified)" >&2
+        exit 1
+      fi
+      PROFILE="$1"
+      ;;
   esac
   shift
 done
