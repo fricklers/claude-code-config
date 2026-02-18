@@ -71,9 +71,12 @@ list_profiles() {
 }
 
 show_status() {
+  # jq filter: prints each plugin, or "(none)" if enabledPlugins is empty/absent
+  local plugin_filter='(.enabledPlugins // {}) | if length == 0 then "  (none)" else to_entries[] | "  \(if .value then "✓" else "✗" end) \(.key | gsub("@claude-plugins-official";""))" end'
+
   bold "Global plugins ($GLOBAL_SETTINGS):"
   if [ -f "$GLOBAL_SETTINGS" ]; then
-    jq -r '.enabledPlugins // {} | to_entries[] | "  \(if .value then "✓" else "✗" end) \(.key | gsub("@claude-plugins-official";""))"' "$GLOBAL_SETTINGS" 2>/dev/null || echo "  (none)"
+    jq -r "$plugin_filter" "$GLOBAL_SETTINGS" 2>/dev/null || echo "  (error reading settings)"
   else
     echo "  (no global settings.json found)"
   fi
@@ -82,7 +85,7 @@ show_status() {
   local project_settings=".claude/settings.json"
   bold "Project plugins (.claude/settings.json):"
   if [ -f "$project_settings" ]; then
-    jq -r '.enabledPlugins // {} | to_entries[] | "  \(if .value then "✓" else "✗" end) \(.key | gsub("@claude-plugins-official";""))"' "$project_settings" 2>/dev/null || echo "  (none)"
+    jq -r "$plugin_filter" "$project_settings" 2>/dev/null || echo "  (error reading settings)"
   else
     echo "  (no project settings.json found — using global only)"
   fi
@@ -98,7 +101,7 @@ apply_to_project() {
   fi
 
   if [ "$profile" = "base" ]; then
-    warn "The 'base' profile is for global use. Run with --global to apply base plugins to ~/.claude/settings.json."
+    warn "The 'base' profile is for global use. Run with --global to apply base plugins to $GLOBAL_SETTINGS."
     warn "Base plugins are already active globally; no project settings needed for base."
     exit 1
   fi
@@ -163,6 +166,10 @@ apply_globally() {
   fi
 
   # For global: always start from base + add profile's plugins on top
+  if [ ! -f "$PROFILES_DIR/base.json" ]; then
+    echo "Error: base profile not found at $PROFILES_DIR/base.json" >&2
+    exit 1
+  fi
   local base_plugins
   base_plugins=$(jq '.enabledPlugins' "$PROFILES_DIR/base.json")
 
@@ -181,8 +188,8 @@ apply_globally() {
     return 0
   fi
 
-  # Backup before modifying global settings
-  local backup="${GLOBAL_SETTINGS}.backup.$(date +%Y%m%d%H%M%S)"
+  # Backup before modifying global settings (go to /tmp/ so they get cleaned up by OS)
+  local backup="/tmp/claude-global-settings-backup-$(date +%Y%m%d%H%M%S).json"
   cp "$GLOBAL_SETTINGS" "$backup"
   ok "Backed up: $GLOBAL_SETTINGS → $backup"
 
@@ -228,6 +235,7 @@ if [ -z "$PROFILE" ]; then
   echo ""
   echo "Available profiles:"
   for f in "$PROFILES_DIR"/*.json; do
+    [ -f "$f" ] || continue
     echo "  $(basename "$f" .json)"
   done
   exit 1

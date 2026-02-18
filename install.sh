@@ -574,9 +574,6 @@ interactive_menu() {
   local vendored_count
   vendored_count=$(jq '.skills | length' "$VENDORED_JSON")
 
-  local profile_count
-  profile_count=$(find "$SCRIPT_DIR/profiles" -name "*.json" 2>/dev/null | wc -l | tr -d ' ')
-
   local categories=(
     "settings:settings.json — permissions, hooks, all config"
     "claude-md:CLAUDE.md — coding instructions"
@@ -813,11 +810,12 @@ validate() {
 
 # Main
 main() {
-  preflight
-
-  # Handle non-install operations first
-  # Handle profile activation
+  # Profile activation doesn't need vendored.json — handle before preflight
   if [ -n "$ACTIVATE_PROFILE" ]; then
+    if ! command -v jq &>/dev/null; then
+      err "jq is required but not found. Install it: brew install jq"
+      exit 1
+    fi
     local dry_flag=""
     $DRY_RUN && dry_flag="--dry-run"
     if $ACTIVATE_PROFILE_GLOBAL; then
@@ -827,6 +825,8 @@ main() {
     fi
     exit $?
   fi
+
+  preflight
 
   if $INSTALL_CHECK; then
     check_skills
