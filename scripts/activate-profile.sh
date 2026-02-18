@@ -55,7 +55,7 @@ list_profiles() {
     local desc
     desc=$(jq -r '.description // "(no description)"' "$profile_file")
     local plugins
-    plugins=$(jq -r '.enabledPlugins | keys | map(gsub("@claude-plugins-official";"")) | join(", ")' "$profile_file")
+    plugins=$(jq -r '.enabledPlugins | to_entries | map(select(.value)) | map(.key | gsub("@claude-plugins-official";"")) | join(", ")' "$profile_file")
     echo -e "  ${BOLD}$name${NC}"
     echo "    $desc"
     if [ "$plugins" = "" ]; then

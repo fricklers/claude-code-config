@@ -107,7 +107,7 @@ while [[ $# -gt 0 ]]; do
       if [[ $# -eq 0 ]]; then err "--profile-global requires a profile name"; exit 1; fi
       ACTIVATE_PROFILE="$1"; ACTIVATE_PROFILE_GLOBAL=true; INTERACTIVE=false ;;
     --list-profiles)
-      "$SCRIPT_DIR/scripts/activate-profile.sh" --list; exit 0 ;;
+      "$SCRIPT_DIR/scripts/activate-profile.sh" --list; exit $? ;;
     --check)           INSTALL_CHECK=true; INTERACTIVE=false ;;
     --no-backup)       BACKUP=false ;;
     --dry-run)         DRY_RUN=true ;;
@@ -657,6 +657,7 @@ install_claude_md() {
 install_hooks() {
   info "Installing hooks..."
   for hook in "$SCRIPT_DIR"/hooks/*.sh; do
+    [ -f "$hook" ] || continue
     local name
     name=$(basename "$hook")
     copy_file "$hook" "$CLAUDE_DIR/hooks/$name"
@@ -669,6 +670,7 @@ install_hooks() {
 install_agents() {
   info "Installing agents..."
   for agent in "$SCRIPT_DIR"/agents/*.md; do
+    [ -f "$agent" ] || continue
     local name
     name=$(basename "$agent")
     copy_file "$agent" "$CLAUDE_DIR/agents/$name"
@@ -700,6 +702,7 @@ install_skills() {
 install_commands() {
   info "Installing commands..."
   for cmd in "$SCRIPT_DIR"/commands/*.md; do
+    [ -f "$cmd" ] || continue
     local name
     name=$(basename "$cmd")
     copy_file "$cmd" "$CLAUDE_DIR/commands/$name"
@@ -709,6 +712,7 @@ install_commands() {
 install_rules() {
   info "Installing rules..."
   for rule in "$SCRIPT_DIR"/rules/*.md; do
+    [ -f "$rule" ] || continue
     local name
     name=$(basename "$rule")
     copy_file "$rule" "$CLAUDE_DIR/rules/$name"
