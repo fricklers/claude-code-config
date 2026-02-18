@@ -224,7 +224,7 @@ merge_settings() {
     .hooks = ($eh * $nh) |
     # enabledPlugins: take new file as authoritative so --settings resets to base profile
     if $new.enabledPlugins then .enabledPlugins = $new.enabledPlugins else . end
-  ' "$dest" "$src" > "$tmp_out"
+  ' "$dest" "$src" > "$tmp_out" || { rm -f "$tmp_out"; err "Failed to merge settings (invalid JSON?)"; return 1; }
   mv "$tmp_out" "$dest"
   ok "Merged settings: $dest"
 }
@@ -325,8 +325,15 @@ extract_skill_from_tarball() {
   if [ -d "$dest_dir" ]; then
     local old_backup="${dest_dir}.old.$$"
     mv "$dest_dir" "$old_backup"
-    mv "$staged" "$dest_dir"
-    rm -rf "$old_backup"
+    if mv "$staged" "$dest_dir"; then
+      rm -rf "$old_backup"
+    else
+      # Second rename failed — restore original so the skill is not left missing
+      mv "$old_backup" "$dest_dir" 2>/dev/null || true
+      rm -rf "$staged" "$tmp_extract" 2>/dev/null
+      err "Failed to install skill to $dest_dir — original restored"
+      return 1
+    fi
   else
     mv "$staged" "$dest_dir"
   fi

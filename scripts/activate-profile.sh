@@ -135,7 +135,8 @@ apply_to_project() {
   if [ ! -f "$project_settings" ]; then
     # Create minimal project settings with just the profile plugins
     tmp_out=$(mktemp ".claude/settings.tmp.XXXXXX")
-    jq -n --argjson plugins "$new_plugins" '{"enabledPlugins": $plugins}' > "$tmp_out"
+    jq -n --argjson plugins "$new_plugins" '{"enabledPlugins": $plugins}' > "$tmp_out" \
+      || { rm -f "$tmp_out"; echo "Error: failed to write profile settings" >&2; exit 1; }
     mv "$tmp_out" "$project_settings"
   else
     # Backup existing settings to /tmp/ (not .claude/ to avoid git noise), then
@@ -145,7 +146,8 @@ apply_to_project() {
     cp "$project_settings" "$backup"
     ok "Backed up: $project_settings → $backup"
     tmp_out=$(mktemp ".claude/settings.tmp.XXXXXX")
-    jq --argjson plugins "$new_plugins" '.enabledPlugins = $plugins' "$project_settings" > "$tmp_out"
+    jq --argjson plugins "$new_plugins" '.enabledPlugins = $plugins' "$project_settings" > "$tmp_out" \
+      || { rm -f "$tmp_out"; echo "Error: failed to update profile settings" >&2; exit 1; }
     mv "$tmp_out" "$project_settings"
   fi
 
@@ -181,9 +183,10 @@ apply_globally() {
   local profile_plugins
   profile_plugins=$(jq '.enabledPlugins' "$profile_file")
 
-  # Combine base + profile plugins (base is idempotent when profile=base)
+  # Combine base + profile plugins (base is idempotent when profile=base).
+  # Use // {} so a missing enabledPlugins key (jq null) doesn't crash the + operator.
   local merged_plugins
-  merged_plugins=$(jq -n --argjson base "$base_plugins" --argjson profile "$profile_plugins" '$base + $profile')
+  merged_plugins=$(jq -n --argjson base "$base_plugins" --argjson profile "$profile_plugins" '($base // {}) + ($profile // {})')
 
   local plugin_list
   plugin_list=$(jq -r 'to_entries | map(select(.value)) | map(.key | gsub("@claude-plugins-official";"")) | join(", ")' <<< "$merged_plugins")
@@ -202,7 +205,8 @@ apply_globally() {
   # Write atomically: same-dir mktemp + mv = rename, never a partial file
   local tmp_out
   tmp_out=$(mktemp "$(dirname "$GLOBAL_SETTINGS")/settings.tmp.XXXXXX")
-  jq --argjson plugins "$merged_plugins" '.enabledPlugins = $plugins' "$GLOBAL_SETTINGS" > "$tmp_out"
+  jq --argjson plugins "$merged_plugins" '.enabledPlugins = $plugins' "$GLOBAL_SETTINGS" > "$tmp_out" \
+    || { rm -f "$tmp_out"; echo "Error: failed to update global settings" >&2; exit 1; }
   mv "$tmp_out" "$GLOBAL_SETTINGS"
 
   ok "Global settings updated with profile '$profile': $plugin_list"
