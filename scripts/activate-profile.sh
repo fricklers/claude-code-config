@@ -123,7 +123,7 @@ apply_to_project() {
 
   if $DRY_RUN; then
     local plugin_list
-    plugin_list=$(jq -r '.enabledPlugins | keys | map(gsub("@claude-plugins-official";"")) | join(", ")' "$profile_file")
+    plugin_list=$(jq -r '.enabledPlugins | to_entries | map(select(.value)) | map(.key | gsub("@claude-plugins-official";"")) | join(", ")' "$profile_file")
     info "Would write $project_settings with: $plugin_list"
     return 0
   fi
@@ -149,7 +149,7 @@ apply_to_project() {
   fi
 
   local plugin_list
-  plugin_list=$(jq -r '.enabledPlugins | keys | map(gsub("@claude-plugins-official";"")) | join(", ")' "$profile_file")
+  plugin_list=$(jq -r '.enabledPlugins | to_entries | map(select(.value)) | map(.key | gsub("@claude-plugins-official";"")) | join(", ")' "$profile_file")
   ok "Profile '$profile' applied to project: $plugin_list"
   info "Base plugins remain active from global settings."
   info "Project settings: $(pwd)/$project_settings"
@@ -185,7 +185,7 @@ apply_globally() {
   merged_plugins=$(jq -n --argjson base "$base_plugins" --argjson profile "$profile_plugins" '$base + $profile')
 
   local plugin_list
-  plugin_list=$(jq -r 'keys | map(gsub("@claude-plugins-official";"")) | join(", ")' <<< "$merged_plugins")
+  plugin_list=$(jq -r 'to_entries | map(select(.value)) | map(.key | gsub("@claude-plugins-official";"")) | join(", ")' <<< "$merged_plugins")
 
   if $DRY_RUN; then
     info "Would update $GLOBAL_SETTINGS enabledPlugins to: $plugin_list"

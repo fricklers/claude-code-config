@@ -619,7 +619,7 @@ interactive_menu() {
       else
         "$SCRIPT_DIR/scripts/activate-profile.sh" "$chosen_profile" $dry_flag
       fi
-      exit 0
+      exit $?
       ;;
     a|A) INSTALL_ALL=true; INSTALL_SETTINGS=true; INSTALL_HOOKS=true; INSTALL_AGENTS=true
           INSTALL_SKILLS=true; INSTALL_COMMANDS=true; INSTALL_RULES=true; INSTALL_CLAUDE_MD=true ;;
