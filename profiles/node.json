@@ -1,0 +1,6 @@
+{
+  "description": "Node.js / TypeScript backend projects. Adds TypeScript LSP on top of base.",
+  "enabledPlugins": {
+    "typescript-lsp@claude-plugins-official": true
+  }
+}

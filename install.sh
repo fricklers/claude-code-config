@@ -22,6 +22,8 @@ INSTALL_VENDORED=false
 INSTALL_SKILL_NAME=""
 INSTALL_LIST_VENDORED=false
 INSTALL_PROJECT_SKILLS=false
+ACTIVATE_PROFILE=""
+ACTIVATE_PROFILE_GLOBAL=false
 
 # Colors (turned off if not a terminal)
 if [ -t 1 ]; then
@@ -59,6 +61,9 @@ Options:
   --list-vendored    List available vendored skills with install status
   --project-skills   Fetch vendored skills declared in .claude/vendored-skills.json
   --check            Check installed skills for staleness (no changes)
+  --profile <name>   Activate plugin profile for current project (see profiles/)
+  --profile-global <name>  Activate plugin profile globally in ~/.claude/settings.json
+  --list-profiles    List available plugin profiles
   --no-backup        Skip backup of existing files
   --dry-run          Show what would be done without doing it
   -y, --yes          Skip confirmation prompts
@@ -93,6 +98,16 @@ while [[ $# -gt 0 ]]; do
       ;;
     --list-vendored)   INSTALL_LIST_VENDORED=true; INTERACTIVE=false ;;
     --project-skills)  INSTALL_PROJECT_SKILLS=true; INTERACTIVE=false ;;
+    --profile)
+      shift
+      if [[ $# -eq 0 ]]; then err "--profile requires a profile name"; exit 1; fi
+      ACTIVATE_PROFILE="$1"; INTERACTIVE=false ;;
+    --profile-global)
+      shift
+      if [[ $# -eq 0 ]]; then err "--profile-global requires a profile name"; exit 1; fi
+      ACTIVATE_PROFILE="$1"; ACTIVATE_PROFILE_GLOBAL=true; INTERACTIVE=false ;;
+    --list-profiles)
+      "$SCRIPT_DIR/scripts/activate-profile.sh" --list; exit 0 ;;
     --check)           INSTALL_CHECK=true; INTERACTIVE=false ;;
     --no-backup)       BACKUP=false ;;
     --dry-run)         DRY_RUN=true ;;
@@ -558,6 +573,9 @@ interactive_menu() {
   local vendored_count
   vendored_count=$(jq '.skills | length' "$VENDORED_JSON")
 
+  local profile_count
+  profile_count=$(find "$SCRIPT_DIR/profiles" -name "*.json" 2>/dev/null | wc -l | tr -d ' ')
+
   local categories=(
     "settings:settings.json — permissions, hooks, all config"
     "claude-md:CLAUDE.md — coding instructions"
@@ -567,6 +585,7 @@ interactive_menu() {
     "commands:commands/ — /handoff, /review, /debug"
     "rules:rules/ — comment policy + testing conventions + language examples"
     "vendored:vendored skills — $vendored_count skills fetched from GitHub (ci-fix, mcp-builder, ...)"
+    "profile:plugin profiles — activate a profile for the current project ($profile_count profiles available)"
   )
 
   echo "Select what to install:"
@@ -580,6 +599,7 @@ interactive_menu() {
   done
   echo ""
   echo "  a) Install everything (custom only, no network fetch)"
+  echo "  p) Activate plugin profile (interactive)"
   echo "  q) Quit"
   echo ""
 
@@ -587,6 +607,19 @@ interactive_menu() {
 
   case "$choices" in
     q|Q) echo "Cancelled."; exit 0 ;;
+    p|P)
+      "$SCRIPT_DIR/scripts/activate-profile.sh" --list
+      echo ""
+      read -r -p "$(echo -e "${YELLOW}?${NC} Profile name (or 'q' to cancel): ")" chosen_profile
+      if [[ "$chosen_profile" == "q" || -z "$chosen_profile" ]]; then echo "Cancelled."; exit 0; fi
+      read -r -p "$(echo -e "${YELLOW}?${NC} Apply globally? [y/N] ")" global_choice
+      if [[ "$global_choice" =~ ^[Yy] ]]; then
+        "$SCRIPT_DIR/scripts/activate-profile.sh" "$chosen_profile" --global
+      else
+        "$SCRIPT_DIR/scripts/activate-profile.sh" "$chosen_profile"
+      fi
+      exit 0
+      ;;
     a|A) INSTALL_ALL=true; INSTALL_SETTINGS=true; INSTALL_HOOKS=true; INSTALL_AGENTS=true
           INSTALL_SKILLS=true; INSTALL_COMMANDS=true; INSTALL_RULES=true; INSTALL_CLAUDE_MD=true ;;
     *)
@@ -602,6 +635,19 @@ interactive_menu() {
           6) INSTALL_COMMANDS=true ;;
           7) INSTALL_RULES=true ;;
           8) INSTALL_VENDORED=true ;;
+          9) # profile selection
+            "$SCRIPT_DIR/scripts/activate-profile.sh" --list
+            echo ""
+            read -r -p "$(echo -e "${YELLOW}?${NC} Profile name: ")" chosen_profile
+            if [[ -n "$chosen_profile" ]]; then
+              read -r -p "$(echo -e "${YELLOW}?${NC} Apply globally? [y/N] ")" global_choice
+              if [[ "$global_choice" =~ ^[Yy] ]]; then
+                "$SCRIPT_DIR/scripts/activate-profile.sh" "$chosen_profile" --global
+              else
+                "$SCRIPT_DIR/scripts/activate-profile.sh" "$chosen_profile"
+              fi
+              exit 0
+            fi ;;
           *) warn "Unknown selection: $s" ;;
         esac
       done
@@ -781,6 +827,16 @@ main() {
   preflight
 
   # Handle non-install operations first
+  # Handle profile activation
+  if [ -n "$ACTIVATE_PROFILE" ]; then
+    if $ACTIVATE_PROFILE_GLOBAL; then
+      "$SCRIPT_DIR/scripts/activate-profile.sh" "$ACTIVATE_PROFILE" --global
+    else
+      "$SCRIPT_DIR/scripts/activate-profile.sh" "$ACTIVATE_PROFILE"
+    fi
+    exit $?
+  fi
+
   if $INSTALL_CHECK; then
     check_skills
     exit 0
