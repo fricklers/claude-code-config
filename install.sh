@@ -196,7 +196,9 @@ merge_settings() {
 
   backup_file "$dest"
 
-  # Merge using jq: union permissions, combine hooks
+  # Merge using jq: union permissions, combine hooks, take new enabledPlugins as authoritative
+  # enabledPlugins is NOT merged — the repo's settings.json defines the base plugin set exactly.
+  # Use activate-profile.sh to add project-specific plugins on top.
   local merged
   merged=$(jq -s '
     def union_arrays: [.[0][], .[1][]] | unique;
@@ -217,7 +219,9 @@ merge_settings() {
     $existing * $new |
     .permissions.allow = ([$ea[], $na[]] | unique) |
     .permissions.deny = ([$ed[], $nd[]] | unique) |
-    .hooks = ($eh * $nh)
+    .hooks = ($eh * $nh) |
+    # enabledPlugins: take new file as authoritative so --settings resets to base profile
+    if $new.enabledPlugins then .enabledPlugins = $new.enabledPlugins else . end
   ' "$dest" "$src")
 
   echo "$merged" | jq '.' > "$dest"
@@ -580,12 +584,11 @@ interactive_menu() {
     "settings:settings.json — permissions, hooks, all config"
     "claude-md:CLAUDE.md — coding instructions"
     "hooks:hooks/ — 6 hook scripts (safety, linting, git context)"
-    "agents:agents/ — explorer, reviewer, coder, tester"
+    "agents:agents/ — explorer, reviewer, tester, security-reviewer, tech-docs-writer"
     "skills:skills/ — $custom_count custom skills (coding, debug, languages, frameworks)"
     "commands:commands/ — /handoff, /review, /debug"
     "rules:rules/ — comment policy + testing conventions + language examples"
     "vendored:vendored skills — $vendored_count skills fetched from GitHub (ci-fix, mcp-builder, ...)"
-    "profile:plugin profiles — activate a profile for the current project ($profile_count profiles available)"
   )
 
   echo "Select what to install:"
@@ -635,19 +638,6 @@ interactive_menu() {
           6) INSTALL_COMMANDS=true ;;
           7) INSTALL_RULES=true ;;
           8) INSTALL_VENDORED=true ;;
-          9) # profile selection
-            "$SCRIPT_DIR/scripts/activate-profile.sh" --list
-            echo ""
-            read -r -p "$(echo -e "${YELLOW}?${NC} Profile name: ")" chosen_profile
-            if [[ -n "$chosen_profile" ]]; then
-              read -r -p "$(echo -e "${YELLOW}?${NC} Apply globally? [y/N] ")" global_choice
-              if [[ "$global_choice" =~ ^[Yy] ]]; then
-                "$SCRIPT_DIR/scripts/activate-profile.sh" "$chosen_profile" --global
-              else
-                "$SCRIPT_DIR/scripts/activate-profile.sh" "$chosen_profile"
-              fi
-              exit 0
-            fi ;;
           *) warn "Unknown selection: $s" ;;
         esac
       done
@@ -829,10 +819,12 @@ main() {
   # Handle non-install operations first
   # Handle profile activation
   if [ -n "$ACTIVATE_PROFILE" ]; then
+    local dry_flag=""
+    $DRY_RUN && dry_flag="--dry-run"
     if $ACTIVATE_PROFILE_GLOBAL; then
-      "$SCRIPT_DIR/scripts/activate-profile.sh" "$ACTIVATE_PROFILE" --global
+      "$SCRIPT_DIR/scripts/activate-profile.sh" "$ACTIVATE_PROFILE" --global $dry_flag
     else
-      "$SCRIPT_DIR/scripts/activate-profile.sh" "$ACTIVATE_PROFILE"
+      "$SCRIPT_DIR/scripts/activate-profile.sh" "$ACTIVATE_PROFILE" $dry_flag
     fi
     exit $?
   fi

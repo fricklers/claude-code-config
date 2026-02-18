@@ -36,6 +36,8 @@ if ! command -v jq &>/dev/null; then
   exit 1
 fi
 
+DRY_RUN=false
+
 list_profiles() {
   bold "Available profiles:"
   echo ""
@@ -84,19 +86,45 @@ apply_to_project() {
     exit 1
   fi
 
-  local project_settings=".claude/settings.json"
-  mkdir -p ".claude"
+  if [ "$profile" = "base" ]; then
+    warn "The 'base' profile is for global use. Run with --global to apply base plugins to ~/.claude/settings.json."
+    warn "Base plugins are already active globally; no project settings needed for base."
+    exit 1
+  fi
 
   # Read the profile's plugins
   local new_plugins
   new_plugins=$(jq '.enabledPlugins' "$profile_file")
 
+  # If profile has no additions, skip writing the file entirely
+  local plugin_count
+  plugin_count=$(jq '.enabledPlugins | length' "$profile_file")
+  if [ "$plugin_count" -eq 0 ]; then
+    ok "Profile '$profile' has no additions beyond base — no project settings needed."
+    info "Base plugins are active globally. Nothing to do."
+    return 0
+  fi
+
+  local project_settings=".claude/settings.json"
+
+  if $DRY_RUN; then
+    local plugin_list
+    plugin_list=$(jq -r '.enabledPlugins | keys | map(gsub("@claude-plugins-official";"")) | join(", ")' "$profile_file")
+    info "Would write $project_settings with: $plugin_list"
+    return 0
+  fi
+
+  mkdir -p ".claude"
+
   if [ ! -f "$project_settings" ]; then
     # Create minimal project settings with just the profile plugins
     jq -n --argjson plugins "$new_plugins" '{"enabledPlugins": $plugins}' > "$project_settings"
   else
-    # Merge: keep existing project settings, replace enabledPlugins with profile
-    # Plugins from a previous profile are cleared; only this profile's additions remain
+    # Backup existing settings, then replace enabledPlugins with profile additions.
+    # Plugins from a previous profile are cleared; only this profile's additions remain.
+    local backup="${project_settings}.backup.$(date +%Y%m%d%H%M%S)"
+    cp "$project_settings" "$backup"
+    ok "Backed up: $project_settings → $backup"
     local updated
     updated=$(jq --argjson plugins "$new_plugins" '.enabledPlugins = $plugins' "$project_settings")
     echo "$updated" > "$project_settings"
@@ -104,12 +132,7 @@ apply_to_project() {
 
   local plugin_list
   plugin_list=$(jq -r '.enabledPlugins | keys | map(gsub("@claude-plugins-official";"")) | join(", ")' "$profile_file")
-
-  if [ -z "$plugin_list" ]; then
-    ok "Profile '$profile' applied to project (no additions beyond base)"
-  else
-    ok "Profile '$profile' applied to project: $plugin_list"
-  fi
+  ok "Profile '$profile' applied to project: $plugin_list"
   info "Base plugins remain active from global settings."
   info "Project settings: $(pwd)/$project_settings"
 }
@@ -128,23 +151,34 @@ apply_globally() {
     exit 1
   fi
 
-  # For global: merge base enabledPlugins with profile enabledPlugins
+  # For global: always start from base + add profile's plugins on top
   local base_plugins
   base_plugins=$(jq '.enabledPlugins' "$PROFILES_DIR/base.json")
 
   local profile_plugins
   profile_plugins=$(jq '.enabledPlugins' "$profile_file")
 
-  # Combine base + profile plugins
+  # Combine base + profile plugins (base is idempotent when profile=base)
   local merged_plugins
   merged_plugins=$(jq -n --argjson base "$base_plugins" --argjson profile "$profile_plugins" '$base + $profile')
+
+  local plugin_list
+  plugin_list=$(jq -r 'keys | map(gsub("@claude-plugins-official";"")) | join(", ")' <<< "$merged_plugins")
+
+  if $DRY_RUN; then
+    info "Would update $GLOBAL_SETTINGS enabledPlugins to: $plugin_list"
+    return 0
+  fi
+
+  # Backup before modifying global settings
+  local backup="${GLOBAL_SETTINGS}.backup.$(date +%Y%m%d%H%M%S)"
+  cp "$GLOBAL_SETTINGS" "$backup"
+  ok "Backed up: $GLOBAL_SETTINGS → $backup"
 
   local updated
   updated=$(jq --argjson plugins "$merged_plugins" '.enabledPlugins = $plugins' "$GLOBAL_SETTINGS")
   echo "$updated" > "$GLOBAL_SETTINGS"
 
-  local plugin_list
-  plugin_list=$(jq -r 'keys | map(gsub("@claude-plugins-official";"")) | join(", ")' <<< "$merged_plugins")
   ok "Global settings updated with profile '$profile': $plugin_list"
 }
 
@@ -155,11 +189,12 @@ COMMAND=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --list)   COMMAND="list" ;;
-    --status) COMMAND="status" ;;
-    --global) GLOBAL=true ;;
-    -*)       echo "Unknown option: $1" >&2; exit 1 ;;
-    *)        PROFILE="$1" ;;
+    --list)      COMMAND="list" ;;
+    --status)    COMMAND="status" ;;
+    --global)    GLOBAL=true ;;
+    --dry-run)   DRY_RUN=true ;;
+    -*)          echo "Unknown option: $1" >&2; exit 1 ;;
+    *)           PROFILE="$1" ;;
   esac
   shift
 done
