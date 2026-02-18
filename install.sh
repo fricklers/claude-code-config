@@ -113,7 +113,7 @@ while [[ $# -gt 0 ]]; do
     --dry-run)         DRY_RUN=true ;;
     -y|--yes)          YES=true ;;
     -h|--help)         usage ;;
-    *)                 err "Unknown option: $1"; usage ;;
+    *)                 err "Unknown option: $1"; err "Run '$(basename "$0") --help' for usage."; exit 1 ;;
   esac
   shift
 done
@@ -199,8 +199,10 @@ merge_settings() {
   # Merge using jq: union permissions, combine hooks, take new enabledPlugins as authoritative
   # enabledPlugins is NOT merged — the repo's settings.json defines the base plugin set exactly.
   # Use activate-profile.sh to add project-specific plugins on top.
-  local merged
-  merged=$(jq -s '
+  # Write atomically: same-dir mktemp + mv = rename, never a partial file.
+  local tmp_out
+  tmp_out=$(mktemp "$(dirname "$dest")/settings.tmp.XXXXXX")
+  jq -s '
     .[0] as $existing | .[1] as $new |
 
     # Merge permissions
@@ -219,9 +221,8 @@ merge_settings() {
     .hooks = ($eh * $nh) |
     # enabledPlugins: take new file as authoritative so --settings resets to base profile
     if $new.enabledPlugins then .enabledPlugins = $new.enabledPlugins else . end
-  ' "$dest" "$src")
-
-  echo "$merged" | jq '.' > "$dest"
+  ' "$dest" "$src" > "$tmp_out"
+  mv "$tmp_out" "$dest"
   ok "Merged settings: $dest"
 }
 
@@ -334,18 +335,19 @@ extract_skill_from_tarball() {
 # Write metadata file for a vendored skill
 write_vendored_meta() {
   local skill_name="$1" dest_dir="$2"
-  local repo commit
+  local repo commit installed_at
   repo=$(vendored_field "$skill_name" "repo")
   commit=$(vendored_field "$skill_name" "commit")
+  installed_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-  cat > "$dest_dir/.vendored-meta.json" <<METAEOF
-{
-  "name": "$skill_name",
-  "repo": "$repo",
-  "commit": "$commit",
-  "installed_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-}
-METAEOF
+  # Use jq to construct JSON so special characters in values don't corrupt the file
+  jq -n \
+    --arg name "$skill_name" \
+    --arg repo "$repo" \
+    --arg commit "$commit" \
+    --arg installed_at "$installed_at" \
+    '{"name": $name, "repo": $repo, "commit": $commit, "installed_at": $installed_at}' \
+    > "$dest_dir/.vendored-meta.json"
 }
 
 # Check if a vendored skill is already installed at the correct commit

@@ -130,18 +130,22 @@ apply_to_project() {
 
   mkdir -p ".claude"
 
+  # Write atomically (same-dir mktemp + mv = rename, never a partial file)
+  local tmp_out
   if [ ! -f "$project_settings" ]; then
     # Create minimal project settings with just the profile plugins
-    jq -n --argjson plugins "$new_plugins" '{"enabledPlugins": $plugins}' > "$project_settings"
+    tmp_out=$(mktemp ".claude/settings.tmp.XXXXXX")
+    jq -n --argjson plugins "$new_plugins" '{"enabledPlugins": $plugins}' > "$tmp_out"
+    mv "$tmp_out" "$project_settings"
   else
     # Backup existing settings to /tmp/ (not .claude/ to avoid git noise), then
     # replace enabledPlugins with profile additions. Previous profile plugins are cleared.
     local backup="/tmp/claude-settings-backup-$(date +%Y%m%d%H%M%S).json"
     cp "$project_settings" "$backup"
     ok "Backed up: $project_settings → $backup"
-    local updated
-    updated=$(jq --argjson plugins "$new_plugins" '.enabledPlugins = $plugins' "$project_settings")
-    echo "$updated" > "$project_settings"
+    tmp_out=$(mktemp ".claude/settings.tmp.XXXXXX")
+    jq --argjson plugins "$new_plugins" '.enabledPlugins = $plugins' "$project_settings" > "$tmp_out"
+    mv "$tmp_out" "$project_settings"
   fi
 
   local plugin_list
@@ -193,9 +197,11 @@ apply_globally() {
   cp "$GLOBAL_SETTINGS" "$backup"
   ok "Backed up: $GLOBAL_SETTINGS → $backup"
 
-  local updated
-  updated=$(jq --argjson plugins "$merged_plugins" '.enabledPlugins = $plugins' "$GLOBAL_SETTINGS")
-  echo "$updated" > "$GLOBAL_SETTINGS"
+  # Write atomically: same-dir mktemp + mv = rename, never a partial file
+  local tmp_out
+  tmp_out=$(mktemp "$(dirname "$GLOBAL_SETTINGS")/settings.tmp.XXXXXX")
+  jq --argjson plugins "$merged_plugins" '.enabledPlugins = $plugins' "$GLOBAL_SETTINGS" > "$tmp_out"
+  mv "$tmp_out" "$GLOBAL_SETTINGS"
 
   ok "Global settings updated with profile '$profile': $plugin_list"
 }
