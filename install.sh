@@ -22,6 +22,9 @@ INSTALL_VENDORED=false
 INSTALL_SKILL_NAME=""
 INSTALL_LIST_VENDORED=false
 INSTALL_PROJECT_SKILLS=false
+ACTIVATE_PROFILE=""
+ACTIVATE_PROFILE_GLOBAL=false
+SETUP_DEV=false
 
 # Colors (turned off if not a terminal)
 if [ -t 1 ]; then
@@ -59,6 +62,10 @@ Options:
   --list-vendored    List available vendored skills with install status
   --project-skills   Fetch vendored skills declared in .claude/vendored-skills.json
   --check            Check installed skills for staleness (no changes)
+  --profile <name>   Activate plugin profile for current project (see profiles/)
+  --profile-global <name>  Activate plugin profile globally in ~/.claude/settings.json
+  --list-profiles    List available plugin profiles
+  --setup-dev        Configure git hooks for contributing (core.hooksPath = .githooks)
   --no-backup        Skip backup of existing files
   --dry-run          Show what would be done without doing it
   -y, --yes          Skip confirmation prompts
@@ -93,12 +100,23 @@ while [[ $# -gt 0 ]]; do
       ;;
     --list-vendored)   INSTALL_LIST_VENDORED=true; INTERACTIVE=false ;;
     --project-skills)  INSTALL_PROJECT_SKILLS=true; INTERACTIVE=false ;;
+    --profile)
+      shift
+      if [[ $# -eq 0 ]]; then err "--profile requires a profile name"; exit 1; fi
+      ACTIVATE_PROFILE="$1"; INTERACTIVE=false ;;
+    --profile-global)
+      shift
+      if [[ $# -eq 0 ]]; then err "--profile-global requires a profile name"; exit 1; fi
+      ACTIVATE_PROFILE="$1"; ACTIVATE_PROFILE_GLOBAL=true; INTERACTIVE=false ;;
+    --list-profiles)
+      "$SCRIPT_DIR/scripts/activate-profile.sh" --list; exit $? ;;
+    --setup-dev)       SETUP_DEV=true; INTERACTIVE=false ;;
     --check)           INSTALL_CHECK=true; INTERACTIVE=false ;;
     --no-backup)       BACKUP=false ;;
     --dry-run)         DRY_RUN=true ;;
     -y|--yes)          YES=true ;;
     -h|--help)         usage ;;
-    *)                 err "Unknown option: $1"; usage ;;
+    *)                 err "Unknown option: $1"; err "Run '$(basename "$0") --help' for usage."; exit 1 ;;
   esac
   shift
 done
@@ -181,12 +199,13 @@ merge_settings() {
 
   backup_file "$dest"
 
-  # Merge using jq: union permissions, combine hooks
-  local merged
-  merged=$(jq -s '
-    def union_arrays: [.[0][], .[1][]] | unique;
-
-    # Start with existing config
+  # Merge using jq: union permissions, combine hooks, take new enabledPlugins as authoritative
+  # enabledPlugins is NOT merged — the repo's settings.json defines the base plugin set exactly.
+  # Use activate-profile.sh to add project-specific plugins on top.
+  # Write atomically: same-dir mktemp + mv = rename, never a partial file.
+  local tmp_out
+  tmp_out=$(mktemp "$(dirname "$dest")/settings.tmp.XXXXXX")
+  jq -s '
     .[0] as $existing | .[1] as $new |
 
     # Merge permissions
@@ -202,10 +221,11 @@ merge_settings() {
     $existing * $new |
     .permissions.allow = ([$ea[], $na[]] | unique) |
     .permissions.deny = ([$ed[], $nd[]] | unique) |
-    .hooks = ($eh * $nh)
-  ' "$dest" "$src")
-
-  echo "$merged" | jq '.' > "$dest"
+    .hooks = ($eh * $nh) |
+    # enabledPlugins: take new file as authoritative so --settings resets to base profile
+    if $new.enabledPlugins then .enabledPlugins = $new.enabledPlugins else . end
+  ' "$dest" "$src" > "$tmp_out" || { rm -f "$tmp_out"; err "Failed to merge settings (invalid JSON?)"; return 1; }
+  mv "$tmp_out" "$dest"
   ok "Merged settings: $dest"
 }
 
@@ -305,8 +325,15 @@ extract_skill_from_tarball() {
   if [ -d "$dest_dir" ]; then
     local old_backup="${dest_dir}.old.$$"
     mv "$dest_dir" "$old_backup"
-    mv "$staged" "$dest_dir"
-    rm -rf "$old_backup"
+    if mv "$staged" "$dest_dir"; then
+      rm -rf "$old_backup"
+    else
+      # Second rename failed — restore original so the skill is not left missing
+      mv "$old_backup" "$dest_dir" 2>/dev/null || true
+      rm -rf "$staged" "$tmp_extract" 2>/dev/null
+      err "Failed to install skill to $dest_dir — original restored"
+      return 1
+    fi
   else
     mv "$staged" "$dest_dir"
   fi
@@ -318,18 +345,19 @@ extract_skill_from_tarball() {
 # Write metadata file for a vendored skill
 write_vendored_meta() {
   local skill_name="$1" dest_dir="$2"
-  local repo commit
+  local repo commit installed_at
   repo=$(vendored_field "$skill_name" "repo")
   commit=$(vendored_field "$skill_name" "commit")
+  installed_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-  cat > "$dest_dir/.vendored-meta.json" <<METAEOF
-{
-  "name": "$skill_name",
-  "repo": "$repo",
-  "commit": "$commit",
-  "installed_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-}
-METAEOF
+  # Use jq to construct JSON so special characters in values don't corrupt the file
+  jq -n \
+    --arg name "$skill_name" \
+    --arg repo "$repo" \
+    --arg commit "$commit" \
+    --arg installed_at "$installed_at" \
+    '{"name": $name, "repo": $repo, "commit": $commit, "installed_at": $installed_at}' \
+    > "$dest_dir/.vendored-meta.json"
 }
 
 # Check if a vendored skill is already installed at the correct commit
@@ -562,7 +590,7 @@ interactive_menu() {
     "settings:settings.json — permissions, hooks, all config"
     "claude-md:CLAUDE.md — coding instructions"
     "hooks:hooks/ — 6 hook scripts (safety, linting, git context)"
-    "agents:agents/ — explorer, reviewer, coder, tester"
+    "agents:agents/ — explorer, reviewer, tester, security-reviewer, tech-docs-writer"
     "skills:skills/ — $custom_count custom skills (coding, debug, languages, frameworks)"
     "commands:commands/ — /handoff, /review, /debug"
     "rules:rules/ — comment policy + testing conventions + language examples"
@@ -580,6 +608,8 @@ interactive_menu() {
   done
   echo ""
   echo "  a) Install everything (custom only, no network fetch)"
+  echo "  p) Activate plugin profile (interactive)"
+  echo "  d) Setup dev environment (git hooks for contributors)"
   echo "  q) Quit"
   echo ""
 
@@ -587,6 +617,22 @@ interactive_menu() {
 
   case "$choices" in
     q|Q) echo "Cancelled."; exit 0 ;;
+    p|P)
+      "$SCRIPT_DIR/scripts/activate-profile.sh" --list
+      echo ""
+      read -r -p "$(echo -e "${YELLOW}?${NC} Profile name (or 'q' to cancel): ")" chosen_profile
+      if [[ "$chosen_profile" == "q" || -z "$chosen_profile" ]]; then echo "Cancelled."; exit 0; fi
+      read -r -p "$(echo -e "${YELLOW}?${NC} Apply globally? [y/N] ")" global_choice
+      local dry_flag=""
+      $DRY_RUN && dry_flag="--dry-run"
+      if [[ "$global_choice" =~ ^[Yy] ]]; then
+        "$SCRIPT_DIR/scripts/activate-profile.sh" "$chosen_profile" --global $dry_flag
+      else
+        "$SCRIPT_DIR/scripts/activate-profile.sh" "$chosen_profile" $dry_flag
+      fi
+      exit $?
+      ;;
+    d|D) SETUP_DEV=true ;;
     a|A) INSTALL_ALL=true; INSTALL_SETTINGS=true; INSTALL_HOOKS=true; INSTALL_AGENTS=true
           INSTALL_SKILLS=true; INSTALL_COMMANDS=true; INSTALL_RULES=true; INSTALL_CLAUDE_MD=true ;;
     *)
@@ -623,6 +669,7 @@ install_claude_md() {
 install_hooks() {
   info "Installing hooks..."
   for hook in "$SCRIPT_DIR"/hooks/*.sh; do
+    [ -f "$hook" ] || continue
     local name
     name=$(basename "$hook")
     copy_file "$hook" "$CLAUDE_DIR/hooks/$name"
@@ -635,6 +682,7 @@ install_hooks() {
 install_agents() {
   info "Installing agents..."
   for agent in "$SCRIPT_DIR"/agents/*.md; do
+    [ -f "$agent" ] || continue
     local name
     name=$(basename "$agent")
     copy_file "$agent" "$CLAUDE_DIR/agents/$name"
@@ -666,6 +714,7 @@ install_skills() {
 install_commands() {
   info "Installing commands..."
   for cmd in "$SCRIPT_DIR"/commands/*.md; do
+    [ -f "$cmd" ] || continue
     local name
     name=$(basename "$cmd")
     copy_file "$cmd" "$CLAUDE_DIR/commands/$name"
@@ -675,6 +724,7 @@ install_commands() {
 install_rules() {
   info "Installing rules..."
   for rule in "$SCRIPT_DIR"/rules/*.md; do
+    [ -f "$rule" ] || continue
     local name
     name=$(basename "$rule")
     copy_file "$rule" "$CLAUDE_DIR/rules/$name"
@@ -776,11 +826,54 @@ validate() {
   fi
 }
 
+# Configure git hooks for contributors
+setup_dev() {
+  # Verify we have the .githooks directory (guards against running from a wrong location)
+  if [ ! -d "$SCRIPT_DIR/.githooks" ]; then
+    err ".githooks/ not found under $SCRIPT_DIR — run this from the claude-code-config repo"
+    exit 1
+  fi
+
+  if ! command -v shellcheck &>/dev/null; then
+    warn "shellcheck not found — install it so hooks can run: brew install shellcheck"
+  fi
+
+  if $DRY_RUN; then
+    info "Would run: git -C \"$SCRIPT_DIR\" config core.hooksPath .githooks"
+    return
+  fi
+
+  # Use -C to target the claude-code-config repo regardless of the caller's CWD
+  git -C "$SCRIPT_DIR" config core.hooksPath .githooks
+  ok "Git hooks configured: core.hooksPath = .githooks"
+  info "shellcheck will run on every commit."
+}
+
 # Main
 main() {
+  # Dev setup and profile activation don't need vendored.json — handle before preflight
+  if $SETUP_DEV; then
+    setup_dev
+    exit $?
+  fi
+
+  if [ -n "$ACTIVATE_PROFILE" ]; then
+    if ! command -v jq &>/dev/null; then
+      err "jq is required but not found. Install it: brew install jq"
+      exit 1
+    fi
+    local dry_flag=""
+    $DRY_RUN && dry_flag="--dry-run"
+    if $ACTIVATE_PROFILE_GLOBAL; then
+      "$SCRIPT_DIR/scripts/activate-profile.sh" "$ACTIVATE_PROFILE" --global $dry_flag
+    else
+      "$SCRIPT_DIR/scripts/activate-profile.sh" "$ACTIVATE_PROFILE" $dry_flag
+    fi
+    exit $?
+  fi
+
   preflight
 
-  # Handle non-install operations first
   if $INSTALL_CHECK; then
     check_skills
     exit 0
@@ -812,6 +905,12 @@ main() {
 
   if $INTERACTIVE; then
     interactive_menu
+  fi
+
+  # Dev setup chosen interactively
+  if $SETUP_DEV; then
+    setup_dev
+    exit $?
   fi
 
   # Determine if we have anything to do
@@ -865,7 +964,12 @@ main() {
       while IFS= read -r name; do
         all_vendored+=("$name")
       done < <(vendored_skill_names)
-      fetch_vendored_batch "${all_vendored[@]}"
+      # Guard against empty array: bash 3.x throws unbound variable on "${arr[@]}" when empty
+      if [ ${#all_vendored[@]} -gt 0 ]; then
+        fetch_vendored_batch "${all_vendored[@]}"
+      else
+        warn "No vendored skills defined in vendored.json"
+      fi
     else
       info "Skipping vendored skills."
     fi

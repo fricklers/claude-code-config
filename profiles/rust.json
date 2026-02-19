@@ -1,0 +1,6 @@
+{
+  "description": "Rust projects. Adds rust-analyzer LSP on top of base.",
+  "enabledPlugins": {
+    "rust-analyzer-lsp@claude-plugins-official": true
+  }
+}

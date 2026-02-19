@@ -1,0 +1,8 @@
+{
+  "description": "Core plugins active for every project. Apply globally with: ./scripts/activate-profile.sh --global base",
+  "enabledPlugins": {
+    "context7@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true
+  }
+}
