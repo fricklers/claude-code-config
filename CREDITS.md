@@ -26,7 +26,7 @@ This configuration was built by analyzing and learning from the best Claude Code
 
 - **[supabase/agent-skills](https://github.com/supabase/agent-skills)** (MIT) — Official Supabase Postgres best practices skill, vendored as `skills/supabase-postgres-best-practices/`. 30+ reference files covering query optimization, indexing, RLS, connection management, and schema design.
 
-- **[warpdotdev/oz-skills](https://github.com/warpdotdev/oz-skills)** (MIT / Apache-2.0) — Warp's curated collection of 13 agent skills following the open Agent Skills specification. Vendored skills: ci-fix, create-pull-request, docs-update, github-bug-report-triage, github-issue-dedupe, mcp-builder, scheduler, seo-aeo-audit, slack-qa-investigate, terraform-style-check, web-accessibility-audit, web-performance-audit, webapp-testing.
+- **[warpdotdev/oz-skills](https://github.com/warpdotdev/oz-skills)** (MIT) — Warp's curated collection of agent skills following the open Agent Skills specification. Vendored skills: ci-fix, docs-update.
 
 - **[Official Claude Code Documentation](https://docs.anthropic.com/en/docs/claude-code)** — All hook, settings, agent, skill, and command specifications.
 
@@ -34,11 +34,10 @@ This configuration was built by analyzing and learning from the best Claude Code
 
 | What we learned | From whom | What we did |
 |----------------|-----------|-------------|
-| Read-only agents prevent accidental modifications | affaan-m | Both agents are read-only (Bash, Glob, Grep, Read only) |
+| Built-in agents over custom overrides | affaan-m | Claude Code's built-in agent types are well-tuned — we don't override them |
 | Simplicity beats comprehensiveness for CLAUDE.md | Boris Cherny | ~50 lines, ~800 tokens — every line earned |
-| Cost-tiered models save money without quality loss | jarrodwatts, Matt-Dionis | haiku for search, sonnet for review and validation (Sonnet 4.6 approaches Opus on many coding tasks) |
 | Session continuity is the #1 missing feature | rohitg00, ykdojo | `/handoff` command creates structured continuity docs |
 | Hooks enforce better than instructions | Boris Cherny, ChrisWiles | 6 hooks covering safety, linting, and context |
 | Zero external deps = zero broken installs | Matt-Dionis | bash + jq only, no npm/pip/cargo |
 | Settings.json is the most important file nobody ships | (our analysis) | Complete settings.json with all hooks pre-wired |
-| Vendor proven community skills rather than reinventing | supabase/agent-skills, warpdotdev/oz-skills | Vendored Postgres best practices and Warp oz-skills with full attribution |
+| Vendor proven community skills rather than reinventing | supabase/agent-skills, warpdotdev/oz-skills | Vendored Postgres best practices, ci-fix, and docs-update with full attribution |
