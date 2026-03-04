@@ -28,8 +28,8 @@ echo "$normalized" | grep -qE '\bgit\s+reset\b.*--hard' && block "git reset --ha
 # git clean -f
 echo "$normalized" | grep -qE '\bgit\s+clean\b.*-[a-z]*f' && block "git clean -f blocked"
 
-# git checkout . / git restore . (discard all changes)
-echo "$normalized" | grep -qE '\bgit\s+(checkout|restore)\s+\.' && block "Discard all changes blocked"
+# git checkout . / git restore . (discard all changes — not dot-files like .gitignore)
+echo "$normalized" | grep -qE '\bgit\s+(checkout|restore)\s+(--\s+)?\.($|\s)' && block "Discard all changes blocked"
 
 # chmod 777
 echo "$normalized" | grep -qE '\bchmod\s+777\b' && block "chmod 777 blocked"

@@ -17,19 +17,14 @@ log=$(git log --oneline -5 2>/dev/null || echo "no commits")
 status=$(git status --short 2>/dev/null || echo "")
 stash=$(git stash list 2>/dev/null || echo "")
 
-context="Git context:\\n"
-context+="Branch: $branch\\n"
-context+="Recent commits:\\n$log\\n"
-
-if [ -n "$status" ]; then
-  context+="Working tree:\\n$status\\n"
-else
-  context+="Working tree: clean\\n"
-fi
-
-if [ -n "$stash" ]; then
-  context+="Stashes:\\n$stash"
-fi
-
-echo "{\"additionalContext\":\"$context\"}"
+jq -n \
+  --arg branch "$branch" \
+  --arg log "$log" \
+  --arg status "$status" \
+  --arg stash "$stash" \
+  '{"additionalContext": (
+    "Git context:\nBranch: \($branch)\nRecent commits:\n\($log)\n" +
+    (if ($status | length) > 0 then "Working tree:\n\($status)\n" else "Working tree: clean\n" end) +
+    (if ($stash | length) > 0 then "Stashes:\n\($stash)" else "" end)
+  )}'
 exit 0

@@ -46,13 +46,10 @@ chmod +x ~/.claude/hooks/*.sh
 | `hooks/auto-lint.sh` | `~/.claude/hooks/` | Auto-detects and runs project linter (eslint/ruff/flake8) on changed files |
 | `hooks/inject-context.sh` | `~/.claude/hooks/` | Injects git branch, recent commits, and working tree status at session start |
 | `hooks/check-todos.sh` | `~/.claude/hooks/` | Blocks Claude from stopping with incomplete todos |
-| `agents/explorer.md` | `~/.claude/agents/` | haiku-powered, read-only — fast codebase search with parallel strategies |
-| `agents/reviewer.md` | `~/.claude/agents/` | sonnet-powered, read-only — code review (bugs, security, perf, coverage) |
-| `agents/tester.md` | `~/.claude/agents/` | sonnet-powered, read-only — runs tests, linters, type checkers, reports pass/fail |
-| `skills/` *(26 skills)* | `~/.claude/skills/` | **Custom:** rigorous-coding, debug, scaffold, ship-it, typescript-strict, python-modern, rust-modeling, go-service, nextjs-app, react-design, api-first, docker-deploy. **Vendored:** supabase-postgres-best-practices, ci-fix, create-pull-request, docs-update, github-bug-report-triage, github-issue-dedupe, mcp-builder, scheduler, seo-aeo-audit, slack-qa-investigate, terraform-style-check, web-accessibility-audit, web-performance-audit, webapp-testing |
+| `skills/` *(12 skills)* | `~/.claude/skills/` | **Global:** scaffold, api-first, docker-deploy. **Project-specific:** typescript-strict, python-modern, rust-modeling, go-service, nextjs-app, react-design (use `--project-skill`). **Vendored:** supabase-postgres-best-practices, ci-fix, docs-update |
 | `commands/handoff.md` | `~/.claude/commands/` | `/handoff` — creates session continuity document for resuming later |
 | `commands/review.md` | `~/.claude/commands/` | `/review [file]` — code review using the reviewer agent |
-| `commands/debug.md` | `~/.claude/commands/` | `/debug` — hypothesis-driven debugging using the debug skill |
+| `commands/debug.md` | `~/.claude/commands/` | `/debug` — hypothesis-driven debugging (reproduce, hypothesize, isolate, verify, fix) |
 | `rules/comments.md` | `~/.claude/rules/` | Comment policy: self-documenting code, no commented-out code, TODO format |
 | `rules/testing.md` | `~/.claude/rules/` | AAA structure, descriptive names, happy+error+edge coverage |
 | `rules/examples/` *(6 files)* | *(not auto-installed)* | Language/stack conventions (TypeScript, Python, Go, React, Rust, Supabase) — copy to project's `.claude/rules/` |
@@ -84,6 +81,17 @@ Create `.claude/settings.json` in your project root. Project settings merge with
   }
 }
 ```
+
+### Add a tech-specific skill to a project
+
+Tech-stack skills (react-design, typescript-strict, etc.) are installed per-project, not globally:
+
+```bash
+cd your-project
+~/claude-code-config/install.sh --project-skill react-design
+```
+
+This copies the skill to `.claude/skills/react-design/` in the current project.
 
 ### Add framework-specific rules
 
@@ -144,7 +152,8 @@ Every skill, agent, and rule in your config consumes context budget. A 27-skill 
 Our design principles:
 - **If it doesn't change Claude's behavior, it doesn't belong in the config**
 - **Hooks > instructions** — enforced guardrails beat polite requests
-- **Cost-tiered agents** — haiku for search ($), sonnet for review and validation ($$) — Sonnet 4.6 approaches Opus on many coding tasks at a fraction of the cost
+- **Built-in agents over custom** — Claude Code's built-in agent types (explorer, reviewer, tester, etc.) are well-tuned; we don't override them
+- **Global vs. project skills** — design-phase skills (scaffold, api-first) are global; tech-stack skills (react-design, typescript-strict) go in the project
 - **Zero external dependencies** — no npm packages, no Python scripts, no MCP plugins to install
 - **Every hook is auditable in seconds** — bash + jq, no transpilation, no runtime
 

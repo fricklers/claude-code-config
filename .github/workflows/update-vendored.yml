@@ -36,8 +36,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b auto/update-vendored
-          git add vendored.json skills/
-          git commit -m "Update vendored skills to latest upstream"
+          git add vendored.json
+          git commit -m "Update vendored skill commit hashes to latest upstream"
           git push -u origin auto/update-vendored --force
           gh pr create --title "Update vendored skills" \
             --body "Automated monthly check found upstream updates. Review the diff." \

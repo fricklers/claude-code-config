@@ -8,7 +8,7 @@ Review code for bugs, security issues, performance problems, and missing test co
 **If arguments were provided:** Review the specified files or directory.
 **If no arguments:** Review the current `git diff` (staged and unstaged changes).
 
-Use the reviewer agent to perform the review. For each finding, categorize as:
+For each finding, categorize as:
 - **Critical**: Bugs, security vulnerabilities, data loss risks
 - **Warning**: Performance issues, missing error handling
 - **Suggestion**: Style, naming, simplification

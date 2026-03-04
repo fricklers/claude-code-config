@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Update vendored skills from upstream repos
+# Update vendored skill commit hashes in vendored.json from upstream repos
+# Only updates the JSON metadata — does NOT copy skill files into the repo.
+# Skill files are fetched on demand via install.sh --vendored.
 # Usage: update-vendored.sh [skill-name]  (default: update all)
 set -euo pipefail
 
@@ -17,14 +19,6 @@ else
 fi
 
 FILTER_NAME="${1:-}"
-TMPDIR=""
-
-cleanup() {
-  if [ -n "$TMPDIR" ] && [ -d "$TMPDIR" ]; then
-    rm -rf "$TMPDIR"
-  fi
-}
-trap cleanup EXIT
 
 if [ ! -f "$VENDORED_JSON" ]; then
   echo -e "${RED}vendored.json not found at $VENDORED_JSON${NC}" >&2
@@ -42,58 +36,37 @@ for i in $(seq 0 $((count - 1))); do
   name=$(jq -r ".skills[$i].name" "$VENDORED_JSON")
   repo=$(jq -r ".skills[$i].repo" "$VENDORED_JSON")
   branch=$(jq -r ".skills[$i].branch" "$VENDORED_JSON")
-  path=$(jq -r ".skills[$i].path" "$VENDORED_JSON")
 
   if [ -n "$FILTER_NAME" ] && [ "$name" != "$FILTER_NAME" ]; then
     continue
   fi
 
-  echo "Updating $name from $repo..."
+  echo "Checking $name from $repo..."
 
-  TMPDIR=$(mktemp -d)
-  if ! git clone --depth=1 --branch "$branch" "$repo" "$TMPDIR/repo" 2>/dev/null; then
-    echo -e "  ${RED}[ERROR]${NC} Failed to clone $repo" >&2
-    rm -rf "$TMPDIR"
-    TMPDIR=""
+  # Get latest commit hash from upstream without cloning
+  new_commit=$(git ls-remote "$repo" "refs/heads/$branch" 2>/dev/null | awk '{print $1}')
+  if [ -z "$new_commit" ]; then
+    echo -e "  ${RED}[ERROR]${NC} Failed to get latest commit from $repo" >&2
     continue
   fi
 
-  upstream_path="$TMPDIR/repo/$path"
-  if [ ! -d "$upstream_path" ]; then
-    echo -e "  ${RED}[ERROR]${NC} Path $path not found in upstream repo" >&2
-    rm -rf "$TMPDIR"
-    TMPDIR=""
+  old_commit=$(jq -r ".skills[$i].commit" "$VENDORED_JSON")
+  if [ "$new_commit" = "$old_commit" ]; then
+    echo -e "  ${GREEN}[OK]${NC} $name — already at ${new_commit:0:7}"
     continue
   fi
 
-  local_path="$REPO_DIR/skills/$name"
-  rm -rf "$local_path"
-  cp -r "$upstream_path" "$local_path"
+  # Update vendored.json with new commit hash (atomic write)
+  tmp_out=$(mktemp "$(dirname "$VENDORED_JSON")/vendored.tmp.XXXXXX")
+  jq --arg idx "$i" --arg commit "$new_commit" '
+    .skills[($idx | tonumber)].commit = $commit
+  ' "$VENDORED_JSON" > "$tmp_out" || { rm -f "$tmp_out"; echo -e "  ${RED}[ERROR]${NC} Failed to update JSON" >&2; continue; }
+  mv "$tmp_out" "$VENDORED_JSON"
 
-  # Get the cloned commit hash
-  new_commit=$(git -C "$TMPDIR/repo" rev-parse HEAD)
-
-  # Extract version from SKILL.md frontmatter
-  new_version=""
-  if [ -f "$local_path/SKILL.md" ]; then
-    new_version=$(sed -n 's/^[[:space:]]*version:[[:space:]]*"\{0,1\}\([^"]*\)"\{0,1\}/\1/p' "$local_path/SKILL.md" | head -1)
-  fi
-
-  # Update vendored.json
-  vendored_update=$(jq --arg idx "$i" --arg commit "$new_commit" --arg version "$new_version" '
-    .skills[($idx | tonumber)].commit = $commit |
-    if $version != "" then .skills[($idx | tonumber)].version = $version else . end
-  ' "$VENDORED_JSON")
-  echo "$vendored_update" > "$VENDORED_JSON"
-
-  rm -rf "$TMPDIR"
-  TMPDIR=""
-
-  echo -e "  ${GREEN}[OK]${NC} Updated $name to $new_commit${new_version:+ (v$new_version)}"
+  echo -e "  ${GREEN}[OK]${NC} Updated $name: ${old_commit:0:7} → ${new_commit:0:7}"
 done
 
 if [ -n "$FILTER_NAME" ]; then
-  # Verify the requested skill was found
   found=$(jq -r --arg name "$FILTER_NAME" '.skills[] | select(.name == $name) | .name' "$VENDORED_JSON")
   if [ -z "$found" ]; then
     echo -e "${RED}Skill '$FILTER_NAME' not found in vendored.json${NC}" >&2

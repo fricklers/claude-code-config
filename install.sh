@@ -12,7 +12,6 @@ DRY_RUN=false
 INSTALL_ALL=false
 INSTALL_HOOKS=false
 INSTALL_SETTINGS=false
-INSTALL_AGENTS=false
 INSTALL_SKILLS=false
 INSTALL_COMMANDS=false
 INSTALL_RULES=false
@@ -22,6 +21,8 @@ INSTALL_VENDORED=false
 INSTALL_SKILL_NAME=""
 INSTALL_LIST_VENDORED=false
 INSTALL_PROJECT_SKILLS=false
+INSTALL_PROJECT_SKILL_NAME=""
+CLEAN_BACKUPS=false
 ACTIVATE_PROFILE=""
 ACTIVATE_PROFILE_GLOBAL=false
 SETUP_DEV=false
@@ -52,13 +53,13 @@ Options:
   --all              Install everything (custom skills only, no network fetch)
   --settings         Install settings.json only
   --hooks            Install hooks only
-  --agents           Install agents only
-  --skills           Install custom skills only (from skills/)
+  --skills           Install global skills only (scaffold, api-first, docker-deploy)
   --commands         Install commands only
   --rules            Install rules only
   --claude-md        Install CLAUDE.md only
   --vendored         Fetch + install ALL vendored skills from GitHub
   --skill <name>     Fetch + install one vendored skill by name
+  --project-skill <name>  Copy a skill from the catalog into current project's .claude/skills/
   --list-vendored    List available vendored skills with install status
   --project-skills   Fetch vendored skills declared in .claude/vendored-skills.json
   --check            Check installed skills for staleness (no changes)
@@ -66,6 +67,7 @@ Options:
   --profile-global <name>  Activate plugin profile globally in ~/.claude/settings.json
   --list-profiles    List available plugin profiles
   --setup-dev        Configure git hooks for contributing (core.hooksPath = .githooks)
+  --clean-backups    Remove all backup files from ~/.claude/
   --no-backup        Skip backup of existing files
   --dry-run          Show what would be done without doing it
   -y, --yes          Skip confirmation prompts
@@ -83,7 +85,6 @@ while [[ $# -gt 0 ]]; do
     --all)             INSTALL_ALL=true; INTERACTIVE=false ;;
     --settings)        INSTALL_SETTINGS=true; INTERACTIVE=false ;;
     --hooks)           INSTALL_HOOKS=true; INTERACTIVE=false ;;
-    --agents)          INSTALL_AGENTS=true; INTERACTIVE=false ;;
     --skills)          INSTALL_SKILLS=true; INTERACTIVE=false ;;
     --commands)        INSTALL_COMMANDS=true; INTERACTIVE=false ;;
     --rules)           INSTALL_RULES=true; INTERACTIVE=false ;;
@@ -98,8 +99,18 @@ while [[ $# -gt 0 ]]; do
       INSTALL_SKILL_NAME="$1"
       INTERACTIVE=false
       ;;
+    --project-skill)
+      shift
+      if [[ $# -eq 0 ]]; then
+        err "--project-skill requires a skill name"
+        exit 1
+      fi
+      INSTALL_PROJECT_SKILL_NAME="$1"
+      INTERACTIVE=false
+      ;;
     --list-vendored)   INSTALL_LIST_VENDORED=true; INTERACTIVE=false ;;
     --project-skills)  INSTALL_PROJECT_SKILLS=true; INTERACTIVE=false ;;
+    --clean-backups)   CLEAN_BACKUPS=true; INTERACTIVE=false ;;
     --profile)
       shift
       if [[ $# -eq 0 ]]; then err "--profile requires a profile name"; exit 1; fi
@@ -124,7 +135,6 @@ done
 if $INSTALL_ALL; then
   INSTALL_SETTINGS=true
   INSTALL_HOOKS=true
-  INSTALL_AGENTS=true
   INSTALL_SKILLS=true
   INSTALL_COMMANDS=true
   INSTALL_RULES=true
@@ -156,6 +166,11 @@ confirm() {
 backup_file() {
   local file="$1"
   if [ -f "$file" ] && $BACKUP; then
+    # Skip backup if the new content is identical to the existing file
+    local src="${2:-}"
+    if [ -n "$src" ] && [ -f "$src" ] && diff -q "$file" "$src" &>/dev/null; then
+      return
+    fi
     local backup
     backup="${file}.backup.$(date +%Y%m%d%H%M%S)"
     if $DRY_RUN; then
@@ -165,6 +180,21 @@ backup_file() {
       ok "Backed up: $file → $backup"
     fi
   fi
+}
+
+clean_backups() {
+  local count
+  count=$(find "$CLAUDE_DIR" -name "*.backup.*" 2>/dev/null | wc -l | tr -d ' ')
+  if [ "$count" -eq 0 ]; then
+    ok "No backup files found in $CLAUDE_DIR"
+    return
+  fi
+  if $DRY_RUN; then
+    info "Would remove $count backup file(s) from $CLAUDE_DIR"
+    return
+  fi
+  find "$CLAUDE_DIR" -name "*.backup.*" -delete 2>/dev/null
+  ok "Removed $count backup file(s) from $CLAUDE_DIR"
 }
 
 copy_file() {
@@ -178,7 +208,7 @@ copy_file() {
   fi
 
   mkdir -p "$dest_dir"
-  backup_file "$dest"
+  backup_file "$dest" "$src"
   cp "$src" "$dest"
   ok "Installed: $dest"
 }
@@ -197,6 +227,7 @@ merge_settings() {
     return
   fi
 
+  # Always backup before merge since the result differs from both inputs
   backup_file "$dest"
 
   # Merge using jq: union permissions, combine hooks, take new enabledPlugins as authoritative
@@ -548,7 +579,7 @@ install_project_skills() {
 
   if [ ! -f "$project_file" ]; then
     err "No $project_file found in current directory."
-    err "Create one with: { \"skills\": [\"ci-fix\", \"create-pull-request\"] }"
+    err "Create one with: { \"skills\": [\"ci-fix\", \"docs-update\"] }"
     exit 1
   fi
 
@@ -581,8 +612,6 @@ interactive_menu() {
   echo "Target: $CLAUDE_DIR"
   echo ""
 
-  local custom_count
-  custom_count=$(find "$SCRIPT_DIR"/skills/ -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
   local vendored_count
   vendored_count=$(jq '.skills | length' "$VENDORED_JSON")
 
@@ -590,11 +619,10 @@ interactive_menu() {
     "settings:settings.json — permissions, hooks, all config"
     "claude-md:CLAUDE.md — coding instructions"
     "hooks:hooks/ — 6 hook scripts (safety, linting, git context)"
-    "agents:agents/ — explorer, reviewer, tester, security-reviewer, tech-docs-writer"
-    "skills:skills/ — $custom_count custom skills (coding, debug, languages, frameworks)"
+    "skills:skills/ — global skills (scaffold, api-first, docker-deploy)"
     "commands:commands/ — /handoff, /review, /debug"
     "rules:rules/ — comment policy + testing conventions + language examples"
-    "vendored:vendored skills — $vendored_count skills fetched from GitHub (ci-fix, mcp-builder, ...)"
+    "vendored:vendored skills — $vendored_count skills fetched from GitHub (ci-fix, docs-update, ...)"
   )
 
   echo "Select what to install:"
@@ -633,8 +661,8 @@ interactive_menu() {
       exit $?
       ;;
     d|D) SETUP_DEV=true ;;
-    a|A) INSTALL_ALL=true; INSTALL_SETTINGS=true; INSTALL_HOOKS=true; INSTALL_AGENTS=true
-          INSTALL_SKILLS=true; INSTALL_COMMANDS=true; INSTALL_RULES=true; INSTALL_CLAUDE_MD=true ;;
+    a|A) INSTALL_SETTINGS=true; INSTALL_HOOKS=true; INSTALL_SKILLS=true
+          INSTALL_COMMANDS=true; INSTALL_RULES=true; INSTALL_CLAUDE_MD=true ;;
     *)
       IFS=',' read -ra selected <<< "$choices"
       for s in "${selected[@]}"; do
@@ -643,11 +671,10 @@ interactive_menu() {
           1) INSTALL_SETTINGS=true ;;
           2) INSTALL_CLAUDE_MD=true ;;
           3) INSTALL_HOOKS=true ;;
-          4) INSTALL_AGENTS=true ;;
-          5) INSTALL_SKILLS=true ;;
-          6) INSTALL_COMMANDS=true ;;
-          7) INSTALL_RULES=true ;;
-          8) INSTALL_VENDORED=true ;;
+          4) INSTALL_SKILLS=true ;;
+          5) INSTALL_COMMANDS=true ;;
+          6) INSTALL_RULES=true ;;
+          7) INSTALL_VENDORED=true ;;
           *) warn "Unknown selection: $s" ;;
         esac
       done
@@ -679,36 +706,56 @@ install_hooks() {
   done
 }
 
-install_agents() {
-  info "Installing agents..."
-  for agent in "$SCRIPT_DIR"/agents/*.md; do
-    [ -f "$agent" ] || continue
-    local name
-    name=$(basename "$agent")
-    copy_file "$agent" "$CLAUDE_DIR/agents/$name"
-  done
-}
+# Skills installed globally (design-phase workflows, not tech-stack-specific)
+GLOBAL_SKILLS=(scaffold api-first docker-deploy)
 
 install_skills() {
-  info "Installing custom skills..."
-  for skill_dir in "$SCRIPT_DIR"/skills/*/; do
-    local name
-    name=$(basename "$skill_dir")
+  info "Installing global skills..."
+  for skill_name in "${GLOBAL_SKILLS[@]}"; do
+    local skill_dir="$SCRIPT_DIR/skills/$skill_name"
+    [ -d "$skill_dir" ] || continue
     if [ -f "$skill_dir/SKILL.md" ]; then
-      copy_file "$skill_dir/SKILL.md" "$CLAUDE_DIR/skills/$name/SKILL.md"
+      copy_file "$skill_dir/SKILL.md" "$CLAUDE_DIR/skills/$skill_name/SKILL.md"
       for extra in "$skill_dir/"*.md; do
         [ "$(basename "$extra")" = "SKILL.md" ] && continue
         [ -f "$extra" ] || continue
-        copy_file "$extra" "$CLAUDE_DIR/skills/$name/$(basename "$extra")"
+        copy_file "$extra" "$CLAUDE_DIR/skills/$skill_name/$(basename "$extra")"
       done
-      if [ -d "$skill_dir/references" ]; then
-        for ref in "$skill_dir"/references/*.md; do
-          [ -f "$ref" ] || continue
-          copy_file "$ref" "$CLAUDE_DIR/skills/$name/references/$(basename "$ref")"
-        done
-      fi
     fi
   done
+  echo ""
+  info "Tech-specific skills (go-service, react-design, etc.) are NOT globally installed."
+  info "Use --project-skill <name> to install one into the current project's .claude/skills/"
+}
+
+# Install a skill from the catalog into the current project
+install_project_skill() {
+  local skill_name="$1"
+  local skill_dir="$SCRIPT_DIR/skills/$skill_name"
+  local dest_dir=".claude/skills/$skill_name"
+
+  if [ ! -d "$skill_dir" ] || [ ! -f "$skill_dir/SKILL.md" ]; then
+    err "Unknown skill: $skill_name"
+    err "Available skills:"
+    for d in "$SCRIPT_DIR"/skills/*/; do
+      [ -f "$d/SKILL.md" ] && err "  $(basename "$d")"
+    done
+    return 1
+  fi
+
+  if $DRY_RUN; then
+    info "Would install skill '$skill_name' to $dest_dir"
+    return
+  fi
+
+  mkdir -p "$dest_dir"
+  cp "$skill_dir/SKILL.md" "$dest_dir/SKILL.md"
+  for extra in "$skill_dir/"*.md; do
+    [ "$(basename "$extra")" = "SKILL.md" ] && continue
+    [ -f "$extra" ] || continue
+    cp "$extra" "$dest_dir/$(basename "$extra")"
+  done
+  ok "Installed skill '$skill_name' to $dest_dir"
 }
 
 install_commands() {
@@ -740,14 +787,14 @@ install_rules() {
 
 # Check installed skills for staleness
 check_skills() {
-  # Check custom skills (file hash comparison)
-  info "Custom skills status ($CLAUDE_DIR/skills/):"
+  # Check global skills (file hash comparison)
+  info "Global skills status ($CLAUDE_DIR/skills/):"
   local has_custom=false
-  for skill_dir in "$SCRIPT_DIR"/skills/*/; do
+  for skill_name in "${GLOBAL_SKILLS[@]}"; do
+    local skill_dir="$SCRIPT_DIR/skills/$skill_name"
     [ -d "$skill_dir" ] || continue
     has_custom=true
-    local name
-    name=$(basename "$skill_dir")
+    local name="$skill_name"
     local installed_dir="$CLAUDE_DIR/skills/$name"
 
     if [ ! -d "$installed_dir" ]; then
@@ -872,6 +919,18 @@ main() {
     exit $?
   fi
 
+  # Handle clean-backups before preflight (doesn't need vendored.json)
+  if $CLEAN_BACKUPS; then
+    clean_backups
+    exit 0
+  fi
+
+  # Handle project-skill before preflight (doesn't need vendored.json)
+  if [ -n "$INSTALL_PROJECT_SKILL_NAME" ]; then
+    install_project_skill "$INSTALL_PROJECT_SKILL_NAME"
+    exit $?
+  fi
+
   preflight
 
   if $INSTALL_CHECK; then
@@ -916,7 +975,7 @@ main() {
   # Determine if we have anything to do
   local has_local=false has_vendored=false
   if $INSTALL_SETTINGS || $INSTALL_CLAUDE_MD || $INSTALL_HOOKS || \
-     $INSTALL_AGENTS || $INSTALL_SKILLS || $INSTALL_COMMANDS || $INSTALL_RULES; then
+     $INSTALL_SKILLS || $INSTALL_COMMANDS || $INSTALL_RULES; then
     has_local=true
   fi
   if $INSTALL_VENDORED; then
@@ -939,7 +998,6 @@ main() {
     if $INSTALL_SETTINGS; then install_settings; fi
     if $INSTALL_CLAUDE_MD; then install_claude_md; fi
     if $INSTALL_HOOKS; then install_hooks; fi
-    if $INSTALL_AGENTS; then install_agents; fi
     if $INSTALL_SKILLS; then install_skills; fi
     if $INSTALL_COMMANDS; then install_commands; fi
     if $INSTALL_RULES; then install_rules; fi

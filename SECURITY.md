@@ -26,4 +26,4 @@ overwrites, and any way a crafted input could cause the scripts to execute arbit
 ## Out of Scope
 
 - The `settings.json` configuration itself (declarative, no code execution)
-- Markdown files (`CLAUDE.md`, agents, skills, commands, rules)
+- Markdown files (`CLAUDE.md`, skills, commands, rules)

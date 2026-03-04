@@ -11,13 +11,12 @@ file_path=$(echo "$input" | jq -r '.tool_input.file_path // empty')
 basename=$(basename "$file_path")
 
 deny() {
-  echo '{"permissionDecision":"deny","reason":"'"$1"'"}'
+  jq -n --arg reason "$1" '{"permissionDecision":"deny","reason":$reason}'
   exit 0
 }
 
 # .env files
 case "$basename" in
-  .env.local) deny "Blocked: secret file $basename" ;;
   .env|.env.*) deny "Blocked: secret file $basename" ;;
 esac
 

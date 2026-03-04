@@ -21,7 +21,7 @@ has_pending=$(echo "$input" | jq -r '
    .content[]? |
    select(.type == "text") |
    .text // empty |
-   select(test("- \\[ \\]|status.*pending|in_progress"; "i"))
+   select(test("- \\[ \\]|\"status\"\\s*:\\s*\"(pending|in_progress)\""; "i"))
   ] | length
 ' 2>/dev/null || echo "0")
 
