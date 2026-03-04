@@ -10,7 +10,7 @@ This configuration was built by analyzing and learning from the best Claude Code
 
 - **[jarrodwatts/claude-code-config](https://github.com/jarrodwatts/claude-code-config)** (913 stars) — Original inspiration for comment and testing rules structure. Our rules files build on his approach with path-scoped activation.
 
-- **[rohitg00/pro-workflow](https://github.com/rohitg00/awesome-claude-code-workflow)** (477 stars) — The `/handoff` concept for session continuity, scout agent inspiration. We simplified the handoff into a focused command.
+- **[rohitg00/pro-workflow](https://github.com/rohitg00/awesome-claude-code-workflow)** (477 stars) — The `/handoff` concept for session continuity. We simplified the handoff into a focused command.
 
 - **[ChrisWiles/claude-code-showcase](https://github.com/ChrisWiles/claude-code-showcase)** (5.2k stars) — Main branch protection patterns, skill evaluation methodology, CI/CD integration approaches.
 
@@ -24,7 +24,7 @@ This configuration was built by analyzing and learning from the best Claude Code
 
 - **[Matt-Dionis/claude-code-configs](https://github.com/Matt-Dionis/claude-code-configs)** (613 stars) — CLI merger tool concept, zero-dependency philosophy, test-driven approach with 124 tests.
 
-- **[supabase/agent-skills](https://github.com/supabase/agent-skills)** (MIT) — Official Supabase Postgres best practices skill, vendored as `skills/supabase-postgres-best-practices/`. 30+ reference files covering query optimization, indexing, RLS, connection management, and schema design.
+- **[supabase/agent-skills](https://github.com/supabase/agent-skills)** (MIT) — Official Supabase Postgres best practices skill, fetched on demand to `~/.claude/skills/supabase-postgres-best-practices/`. 30+ reference files covering query optimization, indexing, RLS, connection management, and schema design.
 
 - **[warpdotdev/oz-skills](https://github.com/warpdotdev/oz-skills)** (MIT) — Warp's curated collection of agent skills following the open Agent Skills specification. Vendored skills: ci-fix, docs-update.
 

@@ -227,6 +227,7 @@ merge_settings() {
     return
   fi
 
+  # Always backup before merge since the result differs from both inputs
   backup_file "$dest"
 
   # Merge using jq: union permissions, combine hooks, take new enabledPlugins as authoritative
@@ -660,8 +661,8 @@ interactive_menu() {
       exit $?
       ;;
     d|D) SETUP_DEV=true ;;
-    a|A) INSTALL_ALL=true; INSTALL_SETTINGS=true; INSTALL_HOOKS=true
-          INSTALL_SKILLS=true; INSTALL_COMMANDS=true; INSTALL_RULES=true; INSTALL_CLAUDE_MD=true ;;
+    a|A) INSTALL_SETTINGS=true; INSTALL_HOOKS=true; INSTALL_SKILLS=true
+          INSTALL_COMMANDS=true; INSTALL_RULES=true; INSTALL_CLAUDE_MD=true ;;
     *)
       IFS=',' read -ra selected <<< "$choices"
       for s in "${selected[@]}"; do

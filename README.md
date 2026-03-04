@@ -49,7 +49,7 @@ chmod +x ~/.claude/hooks/*.sh
 | `skills/` *(12 skills)* | `~/.claude/skills/` | **Global:** scaffold, api-first, docker-deploy. **Project-specific:** typescript-strict, python-modern, rust-modeling, go-service, nextjs-app, react-design (use `--project-skill`). **Vendored:** supabase-postgres-best-practices, ci-fix, docs-update |
 | `commands/handoff.md` | `~/.claude/commands/` | `/handoff` — creates session continuity document for resuming later |
 | `commands/review.md` | `~/.claude/commands/` | `/review [file]` — code review using the reviewer agent |
-| `commands/debug.md` | `~/.claude/commands/` | `/debug` — hypothesis-driven debugging using the debug skill |
+| `commands/debug.md` | `~/.claude/commands/` | `/debug` — hypothesis-driven debugging (reproduce, hypothesize, isolate, verify, fix) |
 | `rules/comments.md` | `~/.claude/rules/` | Comment policy: self-documenting code, no commented-out code, TODO format |
 | `rules/testing.md` | `~/.claude/rules/` | AAA structure, descriptive names, happy+error+edge coverage |
 | `rules/examples/` *(6 files)* | *(not auto-installed)* | Language/stack conventions (TypeScript, Python, Go, React, Rust, Supabase) — copy to project's `.claude/rules/` |

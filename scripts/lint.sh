@@ -16,6 +16,10 @@ shellcheck_targets=("$REPO_DIR/install.sh")
 while IFS= read -r f; do
   shellcheck_targets+=("$f")
 done < <(find "$REPO_DIR/hooks" "$REPO_DIR/scripts" -name '*.sh' -type f 2>/dev/null | sort)
+# Include .githooks/pre-commit (no .sh extension but is a bash script)
+if [ -f "$REPO_DIR/.githooks/pre-commit" ]; then
+  shellcheck_targets+=("$REPO_DIR/.githooks/pre-commit")
+fi
 shellcheck "${shellcheck_targets[@]}"
 echo "shellcheck passed."
 
