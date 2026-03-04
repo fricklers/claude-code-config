@@ -41,7 +41,7 @@ elif [ -f "$root/pyproject.toml" ] || [ -f "$root/setup.cfg" ]; then
 fi
 
 if [ -n "$output" ]; then
-  printf '{"additionalContext":"Lint results for %s:\\n%s"}\n' "$file_path" "$output"
+  jq -n --arg f "$file_path" --arg o "$output" '{"additionalContext": "Lint results for \($f):\n\($o)"}'
 fi
 
 exit 0

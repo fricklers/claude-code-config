@@ -19,14 +19,6 @@ else
 fi
 
 FILTER_NAME="${1:-}"
-WORK_DIR=""
-
-cleanup() {
-  if [ -n "$WORK_DIR" ] && [ -d "$WORK_DIR" ]; then
-    rm -rf "$WORK_DIR"
-  fi
-}
-trap cleanup EXIT
 
 if [ ! -f "$VENDORED_JSON" ]; then
   echo -e "${RED}vendored.json not found at $VENDORED_JSON${NC}" >&2
@@ -64,11 +56,12 @@ for i in $(seq 0 $((count - 1))); do
     continue
   fi
 
-  # Update vendored.json with new commit hash
-  vendored_update=$(jq --arg idx "$i" --arg commit "$new_commit" '
+  # Update vendored.json with new commit hash (atomic write)
+  tmp_out=$(mktemp "$(dirname "$VENDORED_JSON")/vendored.tmp.XXXXXX")
+  jq --arg idx "$i" --arg commit "$new_commit" '
     .skills[($idx | tonumber)].commit = $commit
-  ' "$VENDORED_JSON")
-  echo "$vendored_update" > "$VENDORED_JSON"
+  ' "$VENDORED_JSON" > "$tmp_out" || { rm -f "$tmp_out"; echo -e "  ${RED}[ERROR]${NC} Failed to update JSON" >&2; continue; }
+  mv "$tmp_out" "$VENDORED_JSON"
 
   echo -e "  ${GREEN}[OK]${NC} Updated $name: ${old_commit:0:7} → ${new_commit:0:7}"
 done
