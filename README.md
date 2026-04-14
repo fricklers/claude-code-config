@@ -38,8 +38,8 @@ chmod +x ~/.claude/hooks/*.sh
 
 | File | Target | Description |
 |------|--------|-------------|
-| `settings.json` | `~/.claude/settings.json` | Permissions, hooks, security rules — the one file everyone needs |
-| `CLAUDE.md` | `~/.claude/CLAUDE.md` | ~50 lines of coding instructions — every line addresses a real failure mode |
+| `settings.json` | `~/.claude/settings.json` | Permissions, hooks, plugins, effort level, security rules — the one file everyone needs |
+| `CLAUDE.md` | `~/.claude/CLAUDE.md` | ~60 lines of coding instructions — every line addresses a real failure mode |
 | `hooks/block-dangerous.sh` | `~/.claude/hooks/` | Blocks `rm -rf`, force push, `chmod 777`, pipe-to-shell, disk ops |
 | `hooks/protect-secrets.sh` | `~/.claude/hooks/` | Blocks reading `.env`, keys, certs, SSH keys, credential files |
 | `hooks/confirm-commit.sh` | `~/.claude/hooks/` | Escalates `git commit`/`push` to user confirmation |

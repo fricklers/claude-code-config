@@ -47,6 +47,13 @@
 - When something seems wrong, say so directly with reasoning and suggest an alternative
 - Don't summarize what you did unless asked
 - When reporting errors, include the actual error message and file:line location
+- No step-by-step narration of what you're about to do — just do it
+- No "Here's what I found:" or similar transitions — lead with the content
+- Use bullet points over prose for lists of facts
+- Skip "Note:", "Important:", "Keep in mind:" prefixes — just state it
+- Lead yes/no answers with yes or no
+## Writing Style
+- Never use em dashes (— or --) in any written content, copy, or prose — they are a strong AI writing signal. Use a period, comma, or rewrite the sentence instead.
 
 ## Inclusive Language
 - Avoid "enable/disable" — use "activate/deactivate", "turn on/turn off", or "allow/block"
