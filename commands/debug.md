@@ -3,16 +3,16 @@ name: debug
 description: "Investigate a bug. Usage: /debug [description]. Without arguments, looks at recent errors or test failures."
 ---
 
-Investigate and fix a bug using hypothesis-driven debugging.
+Investigate and fix a bug using the debug skill's 6-step hypothesis-driven approach.
 
 **If arguments were provided:** Start investigating the described bug.
 **If no arguments:** Look at the most recent error — check terminal output, test failures (`npm test`, `pytest`, etc.), or the last error in the project's log files.
 
 ## Process
 
-1. Search the codebase for relevant code paths, error messages, and related tests.
+1. Use the explorer agent to search the codebase for relevant code paths, error messages, and related tests.
 
-2. Follow a systematic approach:
+2. Follow the debug skill discipline:
    - **Reproduce** — Confirm the bug. Run the failing test or trigger the error.
    - **Hypothesize** — List 3+ possible causes. Don't fix yet.
    - **Isolate** — Binary search to narrow scope.

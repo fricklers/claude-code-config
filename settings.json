@@ -2,7 +2,10 @@
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
 
   "env": {
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "true"
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "true",
+    "CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING": "1",
+    "CLAUDE_CODE_EFFORT_LEVEL": "max",
+    "DISABLE_AUTOUPDATER": "1"
   },
 
   "permissions": {
@@ -46,6 +49,7 @@
       "Bash(chmod 777 *)",
       "Read(./.env)",
       "Read(./.env.*)",
+      "Read(./.env.local)",
       "Read(./secrets/**)",
       "Read(./**/*.pem)",
       "Read(./**/*.key)"
@@ -53,10 +57,30 @@
   },
 
   "enabledPlugins": {
-    "context7@claude-plugins-official": true,
-    "superpowers@claude-plugins-official": true,
-    "commit-commands@claude-plugins-official": true
+    "context7@claude-plugins-official": false,
+    "superpowers@claude-plugins-official": false,
+    "commit-commands@claude-plugins-official": false,
+    "qmd@qmd": false,
+    "ralph-loop@claude-plugins-official": true
   },
+
+  "extraKnownMarketplaces": {
+    "qmd": {
+      "source": {
+        "source": "github",
+        "repo": "tobi/qmd"
+      }
+    },
+    "shopify-ai-toolkit": {
+      "source": {
+        "source": "github",
+        "repo": "Shopify/shopify-ai-toolkit"
+      }
+    }
+  },
+
+  "effortLevel": "high",
+  "skipDangerousModePermissionPrompt": true,
 
   "hooks": {
     "PreToolUse": [
