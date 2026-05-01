@@ -5,7 +5,7 @@
       "repo": "https://github.com/supabase/agent-skills.git",
       "branch": "main",
       "path": "skills/supabase-postgres-best-practices",
-      "commit": "22e466937a34fe4f2c7d2d199599c7a76cbcf51f",
+      "commit": "4bb13d858d19f1f848505a66f46fc9603fdcde95",
       "version": "1.1.0",
       "license": "MIT"
     },
@@ -14,7 +14,7 @@
       "repo": "https://github.com/warpdotdev/oz-skills.git",
       "branch": "main",
       "path": ".agents/skills/ci-fix",
-      "commit": "2ca570e61ea029f2813ca4e0d23ddc52abc49f83",
+      "commit": "6c08c49fc6c51b8f768bf8c53c041bc06a160765",
       "license": "MIT"
     },
     {
@@ -22,7 +22,7 @@
       "repo": "https://github.com/warpdotdev/oz-skills.git",
       "branch": "main",
       "path": ".agents/skills/docs-update",
-      "commit": "2ca570e61ea029f2813ca4e0d23ddc52abc49f83",
+      "commit": "6c08c49fc6c51b8f768bf8c53c041bc06a160765",
       "license": "MIT"
     }
   ]
